@@ -18,6 +18,7 @@ export type WalletAsset = {
   protected?: boolean;
   spam?: boolean;
   txStatus?: "pending" | "done" | "failed";
+  txError?: string;
   quoteWei?: bigint;
   quoteFee?: number;
   sweepable?: boolean;
@@ -35,4 +36,5 @@ export type LastClean = {
   feePaid: boolean;
   recoveredWei: bigint;
   cutWei: bigint;
+  error?: string;
 };

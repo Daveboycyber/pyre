@@ -13,21 +13,15 @@ import {
   useConnect,
   useDisconnect,
   usePublicClient,
+  useSwitchChain,
   useWalletClient,
 } from "wagmi";
-import { KNOWN_SPENDERS } from "./chain";
+import { KNOWN_SPENDERS, robinhoodChain } from "./chain";
 import { fetchTokenBalances, tokenContractAddress } from "./blockscout";
 import { isProtectedSymbol, looksLikeSpam } from "./classify";
-import {
-  buildErc20Burn,
-  buildErc20DeadTransfer,
-  buildErc20Revoke,
-  buildErc721Burn,
-  buildErc721DeadTransfer,
-  buildErc721RevokeAll,
-  erc20Abi,
-  erc721Abi,
-} from "./actions";
+import { erc20Abi, erc721Abi } from "./actions";
+import { disposeErc20, disposeErc721, revokeApproval } from "./execute";
+import { actionErrorMessage } from "./tx-error";
 import { DEMO_ADDRESS, DEMO_ASSETS } from "./demo-assets";
 import { buildFeeTx } from "./batch";
 import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees";
@@ -281,9 +275,10 @@ function sleep(ms: number) {
 }
 
 function useWalletCleanerState() {
-  const { address: wagmiAddress, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected, chainId } = useAccount();
   const { connectors, connectAsync, isPending: connecting } = useConnect();
   const { disconnectAsync } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
@@ -302,6 +297,12 @@ function useWalletCleanerState() {
   const address = demo ? DEMO_ADDRESS : wagmiAddress;
   const connected = demo || isConnected;
 
+  const ensureRobinhood = useCallback(async () => {
+    if (demo) return;
+    if (chainId === robinhoodChain.id) return;
+    await switchChainAsync({ chainId: robinhoodChain.id });
+  }, [chainId, demo, switchChainAsync]);
+
   const runScan = useCallback(async () => {
     setStatus("scanning");
     setScanError(null);
@@ -317,6 +318,7 @@ function useWalletCleanerState() {
     }
     if (!address) return;
     try {
+      await ensureRobinhood();
       const built = await buildAssetsForAddress(address, publicClient);
       const quoted = await attachLiveQuotes(
         built.map((a) => withSweepFlags(a, PROTOCOL_FEE_WEI)),
@@ -335,7 +337,7 @@ function useWalletCleanerState() {
       setScanError(err instanceof Error ? err.message : "Scan failed");
       setStatus("idle");
     }
-  }, [address, publicClient, demo]);
+  }, [address, publicClient, demo, ensureRobinhood]);
 
   const connect = useCallback(
     async (connectorId: string) => {
@@ -412,6 +414,7 @@ function useWalletCleanerState() {
     let recoveredWei = 0n;
     let cutWei = 0n;
     let feePaid = false;
+    let lastError: string | undefined;
 
     const emptyResult = {
       tokens: 0,
@@ -424,7 +427,21 @@ function useWalletCleanerState() {
       feePaid: false,
       recoveredWei: 0n,
       cutWei: 0n,
+      error: undefined as string | undefined,
     };
+
+    if (!demo) {
+      try {
+        await ensureRobinhood();
+      } catch (err) {
+        setLastClean({
+          ...emptyResult,
+          error: actionErrorMessage(err),
+        });
+        setStatus("done");
+        return;
+      }
+    }
 
     if (feeWei > 0n) {
       try {
@@ -439,7 +456,11 @@ function useWalletCleanerState() {
             throw new Error("Wallet not ready");
           }
           const feeTx = buildFeeTx(feeWei);
-          const hash = await walletClient.sendTransaction(feeTx);
+          const hash = await walletClient.sendTransaction({
+            ...feeTx,
+            account: address,
+            chain: robinhoodChain,
+          });
           await publicClient.waitForTransactionReceipt({ hash });
           feePaid = true;
           setFeeStatus("done");
@@ -448,7 +469,10 @@ function useWalletCleanerState() {
         console.error("[pyre] protocol fee failed", err);
         setFeeStatus("failed");
         setCurrentId(null);
-        setLastClean(emptyResult);
+        setLastClean({
+          ...emptyResult,
+          error: actionErrorMessage(err),
+        });
         setStatus("done");
         return;
       }
@@ -500,48 +524,36 @@ function useWalletCleanerState() {
           if (!walletClient || !address || !publicClient) {
             throw new Error("Wallet not ready");
           }
-          let hash: `0x${string}` | undefined;
           if (asset.kind === "token" && asset.amountRaw) {
-            try {
-              hash = await walletClient.sendTransaction({
-                to: asset.address,
-                data: buildErc20Burn(asset.amountRaw),
-              });
-              await publicClient.waitForTransactionReceipt({ hash });
-            } catch {
-              hash = await walletClient.sendTransaction({
-                to: asset.address,
-                data: buildErc20DeadTransfer(asset.amountRaw),
-              });
-              await publicClient.waitForTransactionReceipt({ hash });
-            }
+            await disposeErc20({
+              publicClient,
+              walletClient,
+              owner: address,
+              token: asset.address,
+              amount: asset.amountRaw,
+            });
             tokens += 1;
           } else if (asset.kind === "nft" && asset.tokenId !== undefined) {
-            try {
-              hash = await walletClient.sendTransaction({
-                to: asset.address,
-                data: buildErc721Burn(asset.tokenId),
-              });
-              await publicClient.waitForTransactionReceipt({ hash });
-            } catch {
-              hash = await walletClient.sendTransaction({
-                to: asset.address,
-                data: buildErc721DeadTransfer(address, asset.tokenId),
-              });
-              await publicClient.waitForTransactionReceipt({ hash });
-            }
+            await disposeErc721({
+              publicClient,
+              walletClient,
+              owner: address,
+              token: asset.address,
+              tokenId: asset.tokenId,
+            });
             nfts += 1;
           } else if (asset.kind === "approval" && asset.spender) {
-            const data =
-              asset.standard === "ERC-20"
-                ? buildErc20Revoke(asset.spender)
-                : buildErc721RevokeAll(asset.spender);
-            hash = await walletClient.sendTransaction({
-              to: asset.address,
-              data,
+            await revokeApproval({
+              publicClient,
+              walletClient,
+              owner: address,
+              token: asset.address,
+              spender: asset.spender,
+              standard: asset.standard,
             });
-            await publicClient.waitForTransactionReceipt({ hash });
             approvals += 1;
+          } else {
+            throw new Error("Nothing to send for this line");
           }
         }
 
@@ -553,9 +565,12 @@ function useWalletCleanerState() {
       } catch (err) {
         console.error("[pyre] action failed for", asset.id, err);
         failed += 1;
+        lastError = actionErrorMessage(err);
         setAssets((prev) =>
           prev.map((a) =>
-            a.id === asset.id ? { ...a, txStatus: "failed" } : a,
+            a.id === asset.id
+              ? { ...a, txStatus: "failed", txError: lastError }
+              : a,
           ),
         );
       }
@@ -573,9 +588,18 @@ function useWalletCleanerState() {
       feePaid: feeWei === 0n ? false : feePaid,
       recoveredWei,
       cutWei,
+      error: lastError,
     });
     setStatus("done");
-  }, [assets, walletClient, address, publicClient, demo, mode]);
+  }, [
+    assets,
+    walletClient,
+    address,
+    publicClient,
+    demo,
+    mode,
+    ensureRobinhood,
+  ]);
 
   const wasConnected = useRef(false);
   useEffect(() => {

@@ -471,8 +471,21 @@ export function CleanerPage() {
         {status === "done" && lastClean ? (
           <section className="flex flex-col gap-6">
             <h1 className="font-display text-3xl tracking-tight">
-              Wallet cleaned.
+              {lastClean.failed > 0 &&
+              lastClean.tokens +
+                lastClean.nfts +
+                lastClean.approvals +
+                lastClean.swept +
+                lastClean.dustSwaps ===
+                0
+                ? "Nothing landed."
+                : lastClean.failed > 0
+                  ? "Clean finished with errors."
+                  : "Wallet cleaned."}
             </h1>
+            {lastClean.error ? (
+              <p className="text-sm text-destructive">{lastClean.error}</p>
+            ) : null}
             <div className="rounded-2xl bg-card p-6 shadow-[var(--shadow-border)]">
               <p className="font-mono text-4xl tabular-nums text-primary">
                 {lastClean.tokens +
