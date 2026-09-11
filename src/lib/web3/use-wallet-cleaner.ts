@@ -1,0 +1,614 @@
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  usePublicClient,
+  useWalletClient,
+} from "wagmi";
+import { KNOWN_SPENDERS } from "./chain";
+import { fetchTokenBalances } from "./blockscout";
+import { isProtectedSymbol, looksLikeSpam } from "./classify";
+import {
+  buildErc20Burn,
+  buildErc20DeadTransfer,
+  buildErc20Revoke,
+  buildErc721Burn,
+  buildErc721DeadTransfer,
+  buildErc721RevokeAll,
+  erc20Abi,
+  erc721Abi,
+} from "./actions";
+import { DEMO_ADDRESS, DEMO_ASSETS } from "./demo-assets";
+import { buildFeeTx } from "./batch";
+import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees";
+import { attachLiveQuotes } from "./quotes";
+import {
+  selectedAction,
+  sweepCutWei,
+  sweepNetWei,
+  withSweepFlags,
+} from "./sweep";
+import { executeSweepSwap } from "./uniswap";
+import type { LastClean, Mode, ScanStatus, WalletAsset } from "./types";
+
+export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types";
+
+function applyMode(assets: WalletAsset[], mode: Mode): WalletAsset[] {
+  return assets.map((asset) => {
+    const flagged = withSweepFlags(asset, PROTOCOL_FEE_WEI);
+    if (flagged.protected && !flagged.dust) {
+      return { ...flagged, selected: false };
+    }
+    if (mode === "safe") {
+      return {
+        ...flagged,
+        selected: Boolean(flagged.spam) && !flagged.protected,
+      };
+    }
+    if (mode === "sweep") {
+      if (flagged.dust) {
+        return { ...flagged, selected: Boolean(flagged.sweepable) };
+      }
+      return { ...flagged, selected: Boolean(flagged.spam) };
+    }
+    if (flagged.protected) return { ...flagged, selected: false };
+    return flagged;
+  });
+}
+
+export function estimate(assets: WalletAsset[], mode: Mode = "safe") {
+  const selected = assets.filter(
+    (a) => a.selected && (!a.protected || (a.dust && a.sweepable)),
+  );
+  const tokens = selected.filter(
+    (a) => a.kind === "token" && selectedAction(a, mode) === "burn",
+  ).length;
+  const nfts = selected.filter((a) => a.kind === "nft").length;
+  const approvals = selected.filter((a) => a.kind === "approval").length;
+  const sweeps = selected.filter(
+    (a) => selectedAction(a, mode) === "sweep",
+  ).length;
+  const dustSwaps = selected.filter(
+    (a) => selectedAction(a, mode) === "dust-swap",
+  ).length;
+  const protectedCount = assets.filter(
+    (a) => a.protected && !a.dust,
+  ).length;
+  const recoveredWei = selected.reduce((sum, a) => {
+    const action = selectedAction(a, mode);
+    if ((action === "sweep" || action === "dust-swap") && a.quoteWei) {
+      return sum + sweepNetWei(a.quoteWei);
+    }
+    return sum;
+  }, 0n);
+  const cutWei = selected.reduce((sum, a) => {
+    const action = selectedAction(a, mode);
+    if ((action === "sweep" || action === "dust-swap") && a.quoteWei) {
+      return sum + sweepCutWei(a.quoteWei);
+    }
+    return sum;
+  }, 0n);
+  const actions = tokens + nfts + approvals + sweeps + dustSwaps;
+  return {
+    tokens,
+    nfts,
+    approvals,
+    sweeps,
+    dustSwaps,
+    burns: tokens + nfts,
+    protected: protectedCount,
+    actions,
+    feeWei: protocolFeeWei(actions),
+    recoveredWei,
+    cutWei,
+  };
+}
+
+export function shortAddress(address: string) {
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
+function cloneDemo(mode: Mode = "safe"): WalletAsset[] {
+  return applyMode(
+    DEMO_ASSETS.map((asset) => ({ ...asset })),
+    mode,
+  );
+}
+
+async function buildAssetsForAddress(
+  address: `0x${string}`,
+  publicClient: ReturnType<typeof usePublicClient>,
+): Promise<WalletAsset[]> {
+  const balances = await fetchTokenBalances(address);
+  const assets: WalletAsset[] = [];
+
+  const erc20s = balances.filter((b) => b.token.type === "ERC-20");
+  const nftsBy = balances.filter(
+    (b) => b.token.type === "ERC-721" || b.token.type === "ERC-1155",
+  );
+
+  for (const b of erc20s) {
+    const symbol = b.token.symbol ?? "???";
+    const decimals = Number(b.token.decimals ?? 18);
+    const raw = BigInt(b.value || "0");
+    if (raw === 0n) continue;
+    const display = (Number(raw) / 10 ** decimals).toLocaleString(undefined, {
+      maximumFractionDigits: 4,
+    });
+    assets.push({
+      id: `token:${b.token.address}`,
+      kind: "token",
+      standard: "ERC-20",
+      address: b.token.address as `0x${string}`,
+      name: b.token.name ?? symbol,
+      symbol,
+      amount: display,
+      amountRaw: raw,
+      selected: false,
+      protected: isProtectedSymbol(symbol),
+      spam: looksLikeSpam(b.token.name, symbol),
+    });
+  }
+
+  for (const b of nftsBy) {
+    if (b.token_id === null) continue;
+    assets.push({
+      id: `nft:${b.token.address}:${b.token_id}`,
+      kind: "nft",
+      standard: b.token.type === "ERC-1155" ? "ERC-1155" : "ERC-721",
+      address: b.token.address as `0x${string}`,
+      tokenId: BigInt(b.token_id),
+      name: b.token.name ?? "NFT",
+      symbol: b.token.symbol ?? "NFT",
+      amount: "1",
+      selected: false,
+      spam: looksLikeSpam(b.token.name, b.token.symbol),
+    });
+  }
+
+  if (publicClient) {
+    const erc20Checks = erc20s.flatMap((b) =>
+      KNOWN_SPENDERS.map((spender) => ({
+        address: b.token.address as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "allowance" as const,
+        args: [address, spender.address] as const,
+        meta: { token: b, spender },
+      })),
+    );
+    const nftCollections = new Map(nftsBy.map((b) => [b.token.address, b]));
+    const nftChecks = Array.from(nftCollections.values()).flatMap((b) =>
+      KNOWN_SPENDERS.map((spender) => ({
+        address: b.token.address as `0x${string}`,
+        abi: erc721Abi,
+        functionName: "isApprovedForAll" as const,
+        args: [address, spender.address] as const,
+        meta: { token: b, spender },
+      })),
+    );
+
+    if (erc20Checks.length + nftChecks.length > 0) {
+      try {
+        const results = (await publicClient.multicall({
+          contracts: [...erc20Checks, ...nftChecks],
+          allowFailure: true,
+        })) as Array<{ status: "success" | "failure"; result?: unknown }>;
+        results.forEach((res, i) => {
+          if (res.status !== "success") return;
+          const isErc20Check = i < erc20Checks.length;
+          if (isErc20Check) {
+            const { token, spender } = erc20Checks[i].meta;
+            const value = res.result as bigint;
+            if (value > 0n) {
+              assets.push({
+                id: `approval:${token.token.address}:${spender.address}`,
+                kind: "approval",
+                standard: "ERC-20",
+                address: token.token.address as `0x${string}`,
+                spender: spender.address,
+                name: `${token.token.symbol ?? "Token"} → ${spender.label}`,
+                symbol: "Allowance",
+                amount: value > 2n ** 200n ? "Unlimited" : value.toString(),
+                selected: false,
+                spam: true,
+              });
+            }
+          } else {
+            const { token, spender } = nftChecks[i - erc20Checks.length].meta;
+            const approved = res.result as boolean;
+            if (approved) {
+              assets.push({
+                id: `approval:${token.token.address}:${spender.address}:all`,
+                kind: "approval",
+                standard:
+                  token.token.type === "ERC-1155" ? "ERC-1155" : "ERC-721",
+                address: token.token.address as `0x${string}`,
+                spender: spender.address,
+                name: `${token.token.name ?? "Collection"} → ${spender.label}`,
+                symbol: "Operator",
+                amount: "All items",
+                selected: false,
+                spam: true,
+              });
+            }
+          }
+        });
+      } catch (err) {
+        console.error("[pyre] allowance multicall failed", err);
+      }
+    }
+  }
+
+  return assets;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function useWalletCleanerState() {
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { connectors, connectAsync, isPending: connecting } = useConnect();
+  const { disconnectAsync } = useDisconnect();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+
+  const [open, setOpen] = useState(false);
+  const [demo, setDemo] = useState(false);
+  const [status, setStatus] = useState<ScanStatus>("idle");
+  const [mode, setModeState] = useState<Mode>("safe");
+  const [assets, setAssets] = useState<WalletAsset[]>([]);
+  const [lastClean, setLastClean] = useState<LastClean | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [feeStatus, setFeeStatus] = useState<
+    "idle" | "pending" | "done" | "failed"
+  >("idle");
+
+  const address = demo ? DEMO_ADDRESS : wagmiAddress;
+  const connected = demo || isConnected;
+
+  const runScan = useCallback(async () => {
+    setStatus("scanning");
+    setScanError(null);
+    setLastClean(null);
+    setCurrentId(null);
+    setFeeStatus("idle");
+    if (demo) {
+      await sleep(1100);
+      setAssets(cloneDemo("safe"));
+      setModeState("safe");
+      setStatus("ready");
+      return;
+    }
+    if (!address) return;
+    try {
+      const built = await buildAssetsForAddress(address, publicClient);
+      const quoted = await attachLiveQuotes(
+        built.map((a) => withSweepFlags(a, PROTOCOL_FEE_WEI)),
+        publicClient,
+      );
+      setAssets(
+        applyMode(
+          quoted.map((a) => withSweepFlags(a, PROTOCOL_FEE_WEI)),
+          "safe",
+        ),
+      );
+      setModeState("safe");
+      setStatus("ready");
+    } catch (err) {
+      console.error("[pyre] scan failed", err);
+      setScanError(err instanceof Error ? err.message : "Scan failed");
+      setStatus("idle");
+    }
+  }, [address, publicClient, demo]);
+
+  const connect = useCallback(
+    async (connectorId: string) => {
+      const connector = connectors.find(
+        (c) => c.uid === connectorId || c.id === connectorId,
+      );
+      if (!connector) return;
+      setOpen(false);
+      setDemo(false);
+      setLastClean(null);
+      await connectAsync({ connector });
+    },
+    [connectors, connectAsync],
+  );
+
+  const enterDemo = useCallback(() => {
+    setOpen(false);
+    setDemo(true);
+    setLastClean(null);
+    setCurrentId(null);
+    setFeeStatus("idle");
+    setStatus("scanning");
+    window.setTimeout(() => {
+      setAssets(cloneDemo("safe"));
+      setModeState("safe");
+      setStatus("ready");
+    }, 1100);
+  }, []);
+
+  const disconnect = useCallback(async () => {
+    if (!demo) {
+      await disconnectAsync();
+    }
+    setDemo(false);
+    setAssets([]);
+    setLastClean(null);
+    setStatus("idle");
+    setModeState("safe");
+    setCurrentId(null);
+    setFeeStatus("idle");
+  }, [demo, disconnectAsync]);
+
+  const setMode = useCallback((next: Mode) => {
+    setModeState(next);
+    setAssets((prev) => applyMode(prev, next));
+  }, []);
+
+  const toggleAsset = useCallback((id: string) => {
+    setAssets((prev) =>
+      prev.map((a) => {
+        if (a.id !== id) return a;
+        if (a.protected && !(a.dust && a.sweepable)) return a;
+        return { ...a, selected: !a.selected };
+      }),
+    );
+  }, []);
+
+  const clean = useCallback(async () => {
+    const toProcess = assets.filter(
+      (a) => a.selected && (!a.protected || (a.dust && a.sweepable)),
+    );
+    if (toProcess.length === 0) return;
+    const feeWei = protocolFeeWei(toProcess.length);
+    setStatus("signing");
+    setFeeStatus(feeWei > 0n ? "pending" : "idle");
+    setCurrentId(feeWei > 0n ? PROTOCOL_FEE_ID : (toProcess[0]?.id ?? null));
+
+    let tokens = 0;
+    let nfts = 0;
+    let approvals = 0;
+    let swept = 0;
+    let dustSwaps = 0;
+    let failed = 0;
+    let recoveredWei = 0n;
+    let cutWei = 0n;
+    let feePaid = false;
+
+    const emptyResult = {
+      tokens: 0,
+      nfts: 0,
+      approvals: 0,
+      swept: 0,
+      dustSwaps: 0,
+      failed: toProcess.length,
+      feeWei,
+      feePaid: false,
+      recoveredWei: 0n,
+      cutWei: 0n,
+    };
+
+    if (feeWei > 0n) {
+      try {
+        if (demo) {
+          await sleep(700);
+          feePaid = true;
+          setFeeStatus("done");
+        } else if (!treasuryIsLive()) {
+          setFeeStatus("idle");
+        } else {
+          if (!walletClient || !publicClient) {
+            throw new Error("Wallet not ready");
+          }
+          const feeTx = buildFeeTx(feeWei);
+          const hash = await walletClient.sendTransaction(feeTx);
+          await publicClient.waitForTransactionReceipt({ hash });
+          feePaid = true;
+          setFeeStatus("done");
+        }
+      } catch (err) {
+        console.error("[pyre] protocol fee failed", err);
+        setFeeStatus("failed");
+        setCurrentId(null);
+        setLastClean(emptyResult);
+        setStatus("done");
+        return;
+      }
+    }
+
+    for (const asset of toProcess) {
+      setCurrentId(asset.id);
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.id === asset.id ? { ...a, txStatus: "pending" } : a,
+        ),
+      );
+      const action = selectedAction(asset, mode);
+
+      try {
+        if (action === "dust-swap" || action === "sweep") {
+          if (demo) {
+            await sleep(700);
+            const gross = asset.quoteWei ?? 0n;
+            recoveredWei += sweepNetWei(gross);
+            cutWei += sweepCutWei(gross);
+          } else {
+            if (!walletClient || !address || !publicClient || !asset.amountRaw) {
+              throw new Error("Wallet not ready");
+            }
+            if (asset.quoteWei == null || asset.quoteFee == null) {
+              throw new Error("No live swap route");
+            }
+            const result = await executeSweepSwap({
+              publicClient,
+              walletClient,
+              owner: address,
+              token: asset.address,
+              amountIn: asset.amountRaw,
+              fee: asset.quoteFee,
+              quoteWei: asset.quoteWei,
+            });
+            recoveredWei += result.recoveredWei;
+            cutWei += result.cutWei;
+          }
+          if (action === "dust-swap") dustSwaps += 1;
+          else swept += 1;
+        } else if (demo) {
+          await sleep(700);
+          if (asset.kind === "token") tokens += 1;
+          else if (asset.kind === "nft") nfts += 1;
+          else approvals += 1;
+        } else {
+          if (!walletClient || !address || !publicClient) {
+            throw new Error("Wallet not ready");
+          }
+          let hash: `0x${string}` | undefined;
+          if (asset.kind === "token" && asset.amountRaw) {
+            try {
+              hash = await walletClient.sendTransaction({
+                to: asset.address,
+                data: buildErc20Burn(asset.amountRaw),
+              });
+              await publicClient.waitForTransactionReceipt({ hash });
+            } catch {
+              hash = await walletClient.sendTransaction({
+                to: asset.address,
+                data: buildErc20DeadTransfer(asset.amountRaw),
+              });
+              await publicClient.waitForTransactionReceipt({ hash });
+            }
+            tokens += 1;
+          } else if (asset.kind === "nft" && asset.tokenId !== undefined) {
+            try {
+              hash = await walletClient.sendTransaction({
+                to: asset.address,
+                data: buildErc721Burn(asset.tokenId),
+              });
+              await publicClient.waitForTransactionReceipt({ hash });
+            } catch {
+              hash = await walletClient.sendTransaction({
+                to: asset.address,
+                data: buildErc721DeadTransfer(address, asset.tokenId),
+              });
+              await publicClient.waitForTransactionReceipt({ hash });
+            }
+            nfts += 1;
+          } else if (asset.kind === "approval" && asset.spender) {
+            const data =
+              asset.standard === "ERC-20"
+                ? buildErc20Revoke(asset.spender)
+                : buildErc721RevokeAll(asset.spender);
+            hash = await walletClient.sendTransaction({
+              to: asset.address,
+              data,
+            });
+            await publicClient.waitForTransactionReceipt({ hash });
+            approvals += 1;
+          }
+        }
+
+        setAssets((prev) =>
+          prev.map((a) =>
+            a.id === asset.id ? { ...a, txStatus: "done", selected: false } : a,
+          ),
+        );
+      } catch (err) {
+        console.error("[pyre] action failed for", asset.id, err);
+        failed += 1;
+        setAssets((prev) =>
+          prev.map((a) =>
+            a.id === asset.id ? { ...a, txStatus: "failed" } : a,
+          ),
+        );
+      }
+    }
+
+    setCurrentId(null);
+    setLastClean({
+      tokens,
+      nfts,
+      approvals,
+      swept,
+      dustSwaps,
+      failed,
+      feeWei: demo || treasuryIsLive() ? feeWei : 0n,
+      feePaid: feeWei === 0n ? false : feePaid,
+      recoveredWei,
+      cutWei,
+    });
+    setStatus("done");
+  }, [assets, walletClient, address, publicClient, demo, mode]);
+
+  const wasConnected = useRef(false);
+  useEffect(() => {
+    if (demo) return;
+    if (isConnected && !wasConnected.current) {
+      wasConnected.current = true;
+      void runScan();
+    } else if (!isConnected && wasConnected.current) {
+      wasConnected.current = false;
+      setAssets([]);
+      setStatus("idle");
+      setLastClean(null);
+    }
+  }, [isConnected, runScan, demo]);
+
+  return {
+    open,
+    setOpen,
+    connected,
+    connecting,
+    demo,
+    address,
+    status,
+    mode,
+    assets,
+    lastClean,
+    scanError,
+    currentId,
+    feeStatus,
+    connectors,
+    connect,
+    enterDemo,
+    disconnect,
+    setMode,
+    toggleAsset,
+    clean,
+    runScan,
+  };
+}
+
+type WalletCleanerContextValue = ReturnType<typeof useWalletCleanerState>;
+
+const WalletCleanerContext = createContext<WalletCleanerContextValue | null>(
+  null,
+);
+
+export function WalletCleanerProvider({ children }: { children: ReactNode }) {
+  const value = useWalletCleanerState();
+  return createElement(WalletCleanerContext.Provider, { value }, children);
+}
+
+export function useWalletCleaner() {
+  const ctx = useContext(WalletCleanerContext);
+  if (!ctx) {
+    throw new Error(
+      "useWalletCleaner must be used within a WalletCleanerProvider",
+    );
+  }
+  return ctx;
+}
