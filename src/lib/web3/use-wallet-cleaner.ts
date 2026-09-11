@@ -138,12 +138,38 @@ async function buildAssetsForAddress(
       tokenContractAddress(b.token),
   );
 
+  const liveByToken = new Map<string, bigint>();
+  if (publicClient && erc20s.length > 0) {
+    try {
+      const contracts = erc20s
+        .map((b) => tokenContractAddress(b.token))
+        .filter((a): a is `0x${string}` => Boolean(a));
+      const results = (await publicClient.multicall({
+        contracts: contracts.map((token) => ({
+          address: token,
+          abi: erc20Abi,
+          functionName: "balanceOf" as const,
+          args: [address] as const,
+        })),
+        allowFailure: true,
+      })) as Array<{ status: "success" | "failure"; result?: unknown }>;
+      results.forEach((res, i) => {
+        if (res.status === "success" && typeof res.result === "bigint") {
+          liveByToken.set(contracts[i].toLowerCase(), res.result);
+        }
+      });
+    } catch (err) {
+      console.error("[pyre] live balance overlay failed", err);
+    }
+  }
+
   for (const b of erc20s) {
     const contract = tokenContractAddress(b.token);
     if (!contract) continue;
     const symbol = b.token.symbol ?? "???";
     const decimals = Number(b.token.decimals ?? 18);
-    const raw = BigInt(b.value || "0");
+    const live = liveByToken.get(contract.toLowerCase());
+    const raw = live !== undefined ? live : BigInt(b.value || "0");
     if (raw === 0n) continue;
     const display = (Number(raw) / 10 ** decimals).toLocaleString(undefined, {
       maximumFractionDigits: 4,
@@ -293,6 +319,7 @@ function useWalletCleanerState() {
   const [feeStatus, setFeeStatus] = useState<
     "idle" | "pending" | "done" | "failed"
   >("idle");
+  const clearedIds = useRef(new Set<string>());
 
   const address = demo ? DEMO_ADDRESS : wagmiAddress;
   const connected = demo || isConnected;
@@ -320,8 +347,9 @@ function useWalletCleanerState() {
     try {
       await ensureRobinhood();
       const built = await buildAssetsForAddress(address, publicClient);
+      const stillHeld = built.filter((a) => !clearedIds.current.has(a.id));
       const quoted = await attachLiveQuotes(
-        built.map((a) => withSweepFlags(a, PROTOCOL_FEE_WEI)),
+        stillHeld.map((a) => withSweepFlags(a, PROTOCOL_FEE_WEI)),
         publicClient,
       );
       setAssets(
@@ -372,6 +400,7 @@ function useWalletCleanerState() {
       await disconnectAsync();
     }
     setDemo(false);
+    clearedIds.current.clear();
     setAssets([]);
     setLastClean(null);
     setStatus("idle");
@@ -557,6 +586,7 @@ function useWalletCleanerState() {
           }
         }
 
+        clearedIds.current.add(asset.id);
         setAssets((prev) =>
           prev.map((a) =>
             a.id === asset.id ? { ...a, txStatus: "done", selected: false } : a,

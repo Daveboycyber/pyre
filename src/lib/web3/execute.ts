@@ -64,7 +64,7 @@ export async function disposeErc20(opts: {
   owner: `0x${string}`;
   token: `0x${string}`;
   amount: bigint;
-}) {
+}): Promise<{ alreadyGone?: boolean; hash?: `0x${string}` }> {
   const { publicClient, walletClient, owner, token } = opts;
   let amount = opts.amount;
   try {
@@ -74,10 +74,10 @@ export async function disposeErc20(opts: {
       functionName: "balanceOf",
       args: [owner],
     })) as bigint;
-    if (live === 0n) throw new Error("Token balance is zero");
+    if (live === 0n) return { alreadyGone: true };
     if (live < amount) amount = live;
-  } catch (err) {
-    if (err instanceof Error && err.message === "Token balance is zero") throw err;
+  } catch {
+    // Keep the indexer amount if balanceOf is missing.
   }
 
   const deadData = buildErc20DeadTransfer(amount);
@@ -100,7 +100,8 @@ export async function disposeErc20(opts: {
     }
   }
 
-  return sendAndWait(publicClient, walletClient, owner, token, data);
+  const hash = await sendAndWait(publicClient, walletClient, owner, token, data);
+  return { hash };
 }
 
 export async function disposeErc721(opts: {
