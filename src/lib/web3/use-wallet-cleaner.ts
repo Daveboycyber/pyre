@@ -16,7 +16,7 @@ import {
   useWalletClient,
 } from "wagmi";
 import { KNOWN_SPENDERS } from "./chain";
-import { fetchTokenBalances } from "./blockscout";
+import { fetchTokenBalances, tokenContractAddress } from "./blockscout";
 import { isProtectedSymbol, looksLikeSpam } from "./classify";
 import {
   buildErc20Burn,
@@ -132,12 +132,21 @@ async function buildAssetsForAddress(
   const balances = await fetchTokenBalances(address);
   const assets: WalletAsset[] = [];
 
-  const erc20s = balances.filter((b) => b.token.type === "ERC-20");
+  const erc20s = balances.filter((b) => {
+    if (!tokenContractAddress(b.token)) return false;
+    const type = b.token?.type;
+    if (type === "ERC-20" || type === "ERC-404") return true;
+    return !type && b.token_id == null;
+  });
   const nftsBy = balances.filter(
-    (b) => b.token.type === "ERC-721" || b.token.type === "ERC-1155",
+    (b) =>
+      (b.token?.type === "ERC-721" || b.token?.type === "ERC-1155") &&
+      tokenContractAddress(b.token),
   );
 
   for (const b of erc20s) {
+    const contract = tokenContractAddress(b.token);
+    if (!contract) continue;
     const symbol = b.token.symbol ?? "???";
     const decimals = Number(b.token.decimals ?? 18);
     const raw = BigInt(b.value || "0");
@@ -146,10 +155,10 @@ async function buildAssetsForAddress(
       maximumFractionDigits: 4,
     });
     assets.push({
-      id: `token:${b.token.address}`,
+      id: `token:${contract}`,
       kind: "token",
       standard: "ERC-20",
-      address: b.token.address as `0x${string}`,
+      address: contract,
       name: b.token.name ?? symbol,
       symbol,
       amount: display,
@@ -161,12 +170,13 @@ async function buildAssetsForAddress(
   }
 
   for (const b of nftsBy) {
-    if (b.token_id === null) continue;
+    const contract = tokenContractAddress(b.token);
+    if (!contract || b.token_id === null) continue;
     assets.push({
-      id: `nft:${b.token.address}:${b.token_id}`,
+      id: `nft:${contract}:${b.token_id}`,
       kind: "nft",
       standard: b.token.type === "ERC-1155" ? "ERC-1155" : "ERC-721",
-      address: b.token.address as `0x${string}`,
+      address: contract,
       tokenId: BigInt(b.token_id),
       name: b.token.name ?? "NFT",
       symbol: b.token.symbol ?? "NFT",
@@ -177,25 +187,38 @@ async function buildAssetsForAddress(
   }
 
   if (publicClient) {
-    const erc20Checks = erc20s.flatMap((b) =>
-      KNOWN_SPENDERS.map((spender) => ({
-        address: b.token.address as `0x${string}`,
+    const erc20Checks = erc20s.flatMap((b) => {
+      const contract = tokenContractAddress(b.token);
+      if (!contract) return [];
+      return KNOWN_SPENDERS.map((spender) => ({
+        address: contract,
         abi: erc20Abi,
         functionName: "allowance" as const,
         args: [address, spender.address] as const,
-        meta: { token: b, spender },
-      })),
+        meta: { token: b, spender, contract },
+      }));
+    });
+    const nftCollections = new Map(
+      nftsBy
+        .map((b) => {
+          const contract = tokenContractAddress(b.token);
+          return contract ? ([contract, b] as const) : null;
+        })
+        .filter((entry): entry is readonly [`0x${string}`, (typeof nftsBy)[number]] =>
+          Boolean(entry),
+        ),
     );
-    const nftCollections = new Map(nftsBy.map((b) => [b.token.address, b]));
-    const nftChecks = Array.from(nftCollections.values()).flatMap((b) =>
-      KNOWN_SPENDERS.map((spender) => ({
-        address: b.token.address as `0x${string}`,
+    const nftChecks = Array.from(nftCollections.values()).flatMap((b) => {
+      const contract = tokenContractAddress(b.token);
+      if (!contract) return [];
+      return KNOWN_SPENDERS.map((spender) => ({
+        address: contract,
         abi: erc721Abi,
         functionName: "isApprovedForAll" as const,
         args: [address, spender.address] as const,
-        meta: { token: b, spender },
-      })),
-    );
+        meta: { token: b, spender, contract },
+      }));
+    });
 
     if (erc20Checks.length + nftChecks.length > 0) {
       try {
@@ -207,14 +230,14 @@ async function buildAssetsForAddress(
           if (res.status !== "success") return;
           const isErc20Check = i < erc20Checks.length;
           if (isErc20Check) {
-            const { token, spender } = erc20Checks[i].meta;
+            const { token, spender, contract } = erc20Checks[i].meta;
             const value = res.result as bigint;
             if (value > 0n) {
               assets.push({
-                id: `approval:${token.token.address}:${spender.address}`,
+                id: `approval:${contract}:${spender.address}`,
                 kind: "approval",
                 standard: "ERC-20",
-                address: token.token.address as `0x${string}`,
+                address: contract,
                 spender: spender.address,
                 name: `${token.token.symbol ?? "Token"} → ${spender.label}`,
                 symbol: "Allowance",
@@ -224,15 +247,16 @@ async function buildAssetsForAddress(
               });
             }
           } else {
-            const { token, spender } = nftChecks[i - erc20Checks.length].meta;
+            const { token, spender, contract } =
+              nftChecks[i - erc20Checks.length].meta;
             const approved = res.result as boolean;
             if (approved) {
               assets.push({
-                id: `approval:${token.token.address}:${spender.address}:all`,
+                id: `approval:${contract}:${spender.address}:all`,
                 kind: "approval",
                 standard:
                   token.token.type === "ERC-1155" ? "ERC-1155" : "ERC-721",
-                address: token.token.address as `0x${string}`,
+                address: contract,
                 spender: spender.address,
                 name: `${token.token.name ?? "Collection"} → ${spender.label}`,
                 symbol: "Operator",

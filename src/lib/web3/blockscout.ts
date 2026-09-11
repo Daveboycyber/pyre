@@ -1,19 +1,23 @@
 import { robinhoodChain } from "./chain";
+import { tokenContractAddress, type TokenAddressFields } from "./token-address";
 
 const API_BASE = robinhoodChain.blockExplorers.default.apiUrl;
 
+export type BlockscoutToken = TokenAddressFields & {
+  name: string | null;
+  symbol: string | null;
+  decimals: string | number | null;
+  type: "ERC-20" | "ERC-721" | "ERC-1155" | "ERC-404" | string;
+  icon_url: string | null;
+};
+
 export type BlockscoutTokenBalance = {
-  token: {
-    address: string;
-    name: string | null;
-    symbol: string | null;
-    decimals: string | null;
-    type: "ERC-20" | "ERC-721" | "ERC-1155" | "ERC-404";
-    icon_url: string | null;
-  };
+  token: BlockscoutToken;
   value: string;
   token_id: string | null;
 };
+
+export { tokenContractAddress };
 
 async function blockscoutGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

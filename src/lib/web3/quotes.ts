@@ -47,7 +47,9 @@ export async function attachLiveQuotes(
 ): Promise<WalletAsset[]> {
   const next = await Promise.all(
     assets.map(async (asset) => {
-      if (asset.kind !== "token" || !asset.amountRaw) return asset;
+      if (asset.kind !== "token" || !asset.amountRaw || !asset.address) {
+        return asset;
+      }
       if (asset.address.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
         return { ...asset, quoteWei: asset.amountRaw, quoteFee: 0 };
       }
