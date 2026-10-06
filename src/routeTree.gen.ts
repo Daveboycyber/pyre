@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FeesRouteImport } from './routes/fees'
 import { Route as CleanRouteImport } from './routes/clean'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeesRoute = FeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CleanRoute = CleanRouteImport.update({
@@ -26,26 +32,30 @@ const CleanRoute = CleanRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/clean': typeof CleanRoute
+  '/fees': typeof FeesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/clean': typeof CleanRoute
+  '/fees': typeof FeesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/clean': typeof CleanRoute
+  '/fees': typeof FeesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clean'
+  fullPaths: '/' | '/clean' | '/fees'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clean'
-  id: '__root__' | '/' | '/clean'
+  to: '/' | '/clean' | '/fees'
+  id: '__root__' | '/' | '/clean' | '/fees'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FeesRoute: typeof FeesRoute
   CleanRoute: typeof CleanRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fees': {
+      id: '/fees'
+      path: '/fees'
+      fullPath: '/fees'
+      preLoaderRoute: typeof FeesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clean': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FeesRoute: FeesRoute,
   CleanRoute: CleanRoute,
 }
 export const routeTree = rootRouteImport
