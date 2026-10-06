@@ -14,6 +14,7 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { WalletDialog } from "@/components/wallet-dialog";
 import { cn } from "@/lib/utils";
+import { explorerTxUrl } from "@/lib/web3/blockscout";
 import { formatFeeEth, PROTOCOL_FEE_ID, treasuryIsLive } from "@/lib/web3/fees";
 import { selectedAction, sweepNetWei } from "@/lib/web3/sweep";
 import type { Mode } from "@/lib/web3/types";
@@ -549,15 +550,43 @@ export function CleanerPage() {
                   </dd>
                 </div>
               </dl>
+              {lastClean.txs && lastClean.txs.length > 0 ? (
+                <div className="mt-6 border-t border-border pt-4">
+                  <p className="text-xs tracking-wide text-muted-foreground uppercase">
+                    Sweep receipts
+                  </p>
+                  <ul className="mt-3 flex flex-col gap-2">
+                    {lastClean.txs.map((tx) => (
+                      <li
+                        key={tx.hash}
+                        className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
+                      >
+                        <span className="font-mono tabular-nums">
+                          {tx.label}
+                          {tx.recoveredWei != null
+                            ? ` · ${formatFeeEth(tx.recoveredWei)} net`
+                            : ""}
+                          {tx.cutWei != null && tx.cutWei > 0n
+                            ? ` · ${formatFeeEth(tx.cutWei)} cut`
+                            : ""}
+                        </span>
+                        <a
+                          href={explorerTxUrl(tx.hash)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-xs text-primary underline-offset-2 hover:underline"
+                        >
+                          {tx.hash.slice(0, 10)}…
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Button size="lg" onClick={() => runScan()}>
-                Scan again
-              </Button>
-              <Button size="lg" variant="outline" onClick={disconnect}>
-                Disconnect
-              </Button>
-            </div>
+            <Button size="lg" onClick={() => runScan()}>
+              Scan again
+            </Button>
           </section>
         ) : null}
       </main>
