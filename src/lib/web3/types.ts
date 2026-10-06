@@ -34,8 +34,12 @@ export type LastClean = {
   failed: number;
   feeWei: bigint;
   feePaid: boolean;
+  /** Batch fee was waived by spending a local credit. */
+  feeWaived?: boolean;
   recoveredWei: bigint;
   cutWei: bigint;
+  /** Credits awarded for this clean (local ledger). */
+  creditsEarned?: number;
   error?: string;
   txs?: Array<{
     label: string;
