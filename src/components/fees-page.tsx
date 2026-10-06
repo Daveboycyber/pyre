@@ -65,13 +65,21 @@ export function FeesPage() {
                   {formatFeeEth(PROTOCOL_FEE_WEI)} once + gas
                 </td>
               </tr>
-              <tr>
+              <tr className="border-b border-border">
                 <td className="py-4 pr-4">Stock Tokens / stables</td>
                 <td className="py-4 pr-4">
                   Locked by address and ticker (registry loads at scan).
                   Never selected for burn.
                 </td>
                 <td className="py-4">Not for sale here</td>
+              </tr>
+              <tr>
+                <td className="py-4 pr-4">Credits (v0)</td>
+                <td className="py-4 pr-4">
+                  Earn 1 credit when a clean recovers any ETH. Spend 1 credit to
+                  waive the next batch fee. Stored in this browser only.
+                </td>
+                <td className="py-4">Rebate · not transferable</td>
               </tr>
             </tbody>
           </table>
