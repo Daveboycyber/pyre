@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 import { shortAddress, useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 const NAV: Array<
-  | { kind: "route"; to: "/clean"; label: string }
+  | { kind: "route"; to: "/clean" | "/fees"; label: string }
   | { kind: "hash"; href: string; label: string }
 > = [
   { kind: "route", to: "/clean", label: "Cleaner" },
-  { kind: "hash", href: "#how", label: "How it works" },
-  { kind: "hash", href: "#fees", label: "Fees" },
-  { kind: "hash", href: "#faq", label: "FAQ" },
+  { kind: "hash", href: "/#how", label: "How it works" },
+  { kind: "route", to: "/fees", label: "Fees" },
+  { kind: "hash", href: "/#faq", label: "FAQ" },
 ];
 
 export function SiteHeader() {
