@@ -174,15 +174,15 @@ export async function executeSweepSwap(opts: {
   amountIn: bigint;
   fee: number;
   quoteWei: bigint;
-}): Promise<{ recoveredWei: bigint; cutWei: bigint }> {
+}): Promise<{ recoveredWei: bigint; cutWei: bigint; hash: `0x${string}` }> {
   const { publicClient, walletClient, owner, token, amountIn, fee, quoteWei } =
     opts;
   const minOut = minOutFromQuote(quoteWei);
   const cutWei = treasuryIsLive() ? sweepCutWei(quoteWei) : 0n;
-  const recoveredWei = quoteWei - cutWei;
 
+  let hash: `0x${string}`;
   if (token.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
-    const hash = await walletClient.sendTransaction({
+    hash = await walletClient.sendTransaction({
       to: WETH_ADDRESS,
       data: encodeFunctionData({
         abi: [
@@ -228,7 +228,7 @@ export async function executeSweepSwap(opts: {
       functionName: "unwrapWETH9",
       args: [minOut, owner],
     });
-    const hash = await walletClient.sendTransaction({
+    hash = await walletClient.sendTransaction({
       to: UNISWAP_SWAP_ROUTER_02,
       data: encodeFunctionData({
         abi: swapRouterAbi,
@@ -247,5 +247,5 @@ export async function executeSweepSwap(opts: {
     await publicClient.waitForTransactionReceipt({ hash: cutHash });
   }
 
-  return { recoveredWei: sweepNetWei(quoteWei), cutWei };
+  return { recoveredWei: sweepNetWei(quoteWei), cutWei, hash };
 }
