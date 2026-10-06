@@ -20,19 +20,19 @@ export function SiteFooter() {
             Cleaner
           </Link>
           <a
-            href="#how"
+            href="/#how"
             className="text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
           >
             How it works
           </a>
-          <a
-            href="#fees"
+          <Link
+            to="/fees"
             className="text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
           >
             Fees
-          </a>
+          </Link>
           <a
-            href="#faq"
+            href="/#faq"
             className="text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
           >
             FAQ
