@@ -24,7 +24,7 @@ export function quoteClears(
 
 export function isDustPosition(asset: WalletAsset) {
   if (!asset.protected || asset.kind !== "token") return false;
-  if (!isStockToken(asset.symbol)) return false;
+  if (!isStockToken(asset.symbol, asset.address)) return false;
   return parseDisplayAmount(asset.amount) > 0 && parseDisplayAmount(asset.amount) < DUST_UNITS;
 }
 

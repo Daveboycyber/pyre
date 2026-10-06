@@ -37,4 +37,10 @@ export type LastClean = {
   recoveredWei: bigint;
   cutWei: bigint;
   error?: string;
+  txs?: Array<{
+    label: string;
+    hash: `0x${string}`;
+    recoveredWei?: bigint;
+    cutWei?: bigint;
+  }>;
 };
