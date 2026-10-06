@@ -179,6 +179,7 @@ export function CleanerPage() {
     scanError,
     currentId,
     feeStatus,
+    credits,
     demo,
     setOpen,
     enterDemo,
@@ -197,6 +198,7 @@ export function CleanerPage() {
   const lockedAssets = assets.filter((a) => a.protected && !a.dust);
   const dustAssets = assets.filter((a) => a.dust);
   const reviewable = assets.filter((a) => !a.protected);
+  const willWaiveFee = summary.feeWei > 0n && credits >= 1;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -289,12 +291,22 @@ export function CleanerPage() {
                 </p>
               ) : null}
               <p className="mt-1 font-mono text-sm tabular-nums text-primary">
-                {!demo && !treasuryIsLive() && summary.feeWei > 0n
+                {!demo && !treasuryIsLive() && summary.feeWei > 0n && !willWaiveFee
                   ? "Batch fee paused — treasury not set"
-                  : summary.feeWei > 0n
-                    ? `Batch fee ${formatFeeEth(summary.feeWei)}`
-                    : "No protocol fee — single action"}
+                  : willWaiveFee
+                    ? `Batch fee waived · 1 of ${credits} credit${credits === 1 ? "" : "s"}`
+                    : summary.feeWei > 0n
+                      ? `Batch fee ${formatFeeEth(summary.feeWei)}`
+                      : "No protocol fee — single action"}
               </p>
+              {connected && !demo ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Credits: {credits}
+                  {credits > 0
+                    ? " · each waives one batch fee"
+                    : " · earn one by recovering ETH in Sweep"}
+                </p>
+              ) : null}
             </div>
 
             <div
@@ -411,9 +423,11 @@ export function CleanerPage() {
                 : mode === "sweep"
                   ? "Sweep sells spam with a real ETH route, takes 1.25%, and burns the rest. Dust Stock Tokens swap only when the quote clears gas plus the batch fee. They are never burned."
                   : "Review lets you tick extra tokens and NFTs. Locked holdings cannot be selected. Burns cannot be undone."}{" "}
-              {summary.feeWei > 0n
-                ? "A flat batch fee is charged once in ETH before any line runs."
-                : "One action stays free. Select two or more and a flat batch fee applies."}
+              {willWaiveFee
+                ? "One credit will waive the batch fee for this clean."
+                : summary.feeWei > 0n
+                  ? "A flat batch fee is charged once in ETH before any line runs."
+                  : "One action stays free. Select two or more and a flat batch fee applies."}
             </p>
 
             <div className="sticky bottom-0 -mx-5 border-t border-border bg-background px-5 py-4">
@@ -424,9 +438,11 @@ export function CleanerPage() {
                 disabled={summary.actions <= 0}
               >
                 <Flame />
-                {summary.feeWei > 0n
-                  ? `Sign ${summary.actions} actions · ${formatFeeEth(summary.feeWei)}`
-                  : `Sign ${summary.actions} free action`}
+                {willWaiveFee
+                  ? `Sign ${summary.actions} actions · fee waived`
+                  : summary.feeWei > 0n
+                    ? `Sign ${summary.actions} actions · ${formatFeeEth(summary.feeWei)}`
+                    : `Sign ${summary.actions} free action`}
               </Button>
             </div>
           </section>
@@ -435,18 +451,20 @@ export function CleanerPage() {
         {status === "signing" ? (
           <section className="flex flex-col gap-6">
             <h1 className="font-display text-3xl tracking-tight">
-              {summary.feeWei > 0n
+              {summary.feeWei > 0n && !willWaiveFee
                 ? "Pay the fee, then sign each action."
                 : "Sign this action."}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {summary.feeWei > 0n
-                ? "The batch fee is collected first. If that payment fails, nothing is burned."
-                : "Single actions stay free. You only pay network gas."}
+              {willWaiveFee
+                ? "Your credit covers the batch fee. Sign each action as usual."
+                : summary.feeWei > 0n
+                  ? "The batch fee is collected first. If that payment fails, nothing is burned."
+                  : "Single actions stay free. You only pay network gas."}
             </p>
             <div className="rounded-2xl bg-card p-2 shadow-[var(--shadow-border)]">
               <ul>
-                {summary.feeWei > 0n ? (
+                {summary.feeWei > 0n && !willWaiveFee ? (
                   <li>
                     <FeeRow
                       feeWei={summary.feeWei}
@@ -542,13 +560,23 @@ export function CleanerPage() {
                 <div>
                   <dt className="text-muted-foreground">Protocol fee</dt>
                   <dd className="font-mono tabular-nums">
-                    {lastClean.feeWei > 0n
-                      ? lastClean.feePaid
-                        ? formatFeeEth(lastClean.feeWei)
-                        : "Not paid — batch aborted"
-                      : "None"}
+                    {lastClean.feeWaived
+                      ? "Waived (1 credit)"
+                      : lastClean.feeWei > 0n
+                        ? lastClean.feePaid
+                          ? formatFeeEth(lastClean.feeWei)
+                          : "Not paid — batch aborted"
+                        : "None"}
                   </dd>
                 </div>
+                {lastClean.creditsEarned ? (
+                  <div>
+                    <dt className="text-muted-foreground">Credits earned</dt>
+                    <dd className="font-mono tabular-nums">
+                      +{lastClean.creditsEarned}
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
               {lastClean.txs && lastClean.txs.length > 0 ? (
                 <div className="mt-6 border-t border-border pt-4">
