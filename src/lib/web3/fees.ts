@@ -41,10 +41,13 @@ export const TREASURY_ADDRESS = readAddress(
   LIVE_TREASURY,
 );
 
-/** Zero until PyreBatch is deployed; fee then goes straight to treasury. */
+const LIVE_PYRE_BATCH =
+  "0x92C5eAaBdaDFF7575c3f19B6ce3f86e8F9b5126B" as const;
+
+/** PyreBatch on Robinhood Chain — batch fees go through collectFee(). */
 export const PYRE_BATCH_ADDRESS = readAddress(
   "VITE_PYRE_BATCH",
-  "0x0000000000000000000000000000000000000000",
+  LIVE_PYRE_BATCH,
 );
 
 export const PROTOCOL_FEE_WEI = readFeeWei();
@@ -61,16 +64,19 @@ export function protocolFeeWei(actionCount: number) {
 
 export function formatFeeEth(wei: bigint) {
   const eth = formatEther(wei);
-  const trimmed = eth.replace(/(\.\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
+  const trimmed = eth.replace(/(\.
+\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
   return `${trimmed} ETH`;
 }
 
 export function pyreBatchIsDeployed() {
-  return PYRE_BATCH_ADDRESS !== "0x0000000000000000000000000000000000000000";
+  return (
+    PYRE_BATCH_ADDRESS.toLowerCase() !==
+    "0x0000000000000000000000000000000000000000"
+  );
 }
 
 /** Do not send user ETH to the placeholder. */
 export function treasuryIsLive() {
   return TREASURY_ADDRESS.toLowerCase() !== PLACEHOLDER_TREASURY.toLowerCase();
 }
-
