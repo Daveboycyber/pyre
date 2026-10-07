@@ -64,8 +64,9 @@ export function protocolFeeWei(actionCount: number) {
 
 export function formatFeeEth(wei: bigint) {
   const eth = formatEther(wei);
-  const trimmed = eth.replace(/(\.
-\d*?[1-9])0+$/, "$1").replace(/\.0+$/, "");
+  const trimmed = eth
+    .replace(/(\.[0-9]*?[1-9])0+$/, "$1")
+    .replace(/\.0+$/, "");
   return `${trimmed} ETH`;
 }
 
