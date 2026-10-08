@@ -454,17 +454,17 @@ function useWalletCleanerState() {
     (assetId: string) => {
       if (!address || demo) return;
       setDismissedIds(undismissAsset(address, assetId));
+      void runScan();
     },
-    [address, demo],
+    [address, demo, runScan],
   );
 
   const toggleShowDismissed = useCallback(() => {
-    setShowDismissed((prev) => {
-      const next = !prev;
-      showDismissedRef.current = next;
-      return next;
-    });
-  }, []);
+    const next = !showDismissedRef.current;
+    showDismissedRef.current = next;
+    setShowDismissed(next);
+    void runScan();
+  }, [runScan]);
 
   return {
     open,
