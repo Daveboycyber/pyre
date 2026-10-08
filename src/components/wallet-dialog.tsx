@@ -115,7 +115,7 @@ export function WalletDialog() {
           <DialogTitle>Connect a wallet</DialogTitle>
           <DialogDescription>
             {showMobileHandoff
-              ? "Phone browsers can’t see extension wallets. Open Pyre inside the wallet app, then tap Connect."
+              ? "Safari and Chrome can’t see wallet apps. Pick one below to open Pyre inside that app, then connect there."
               : "Pyre reads Robinhood Chain (4663) directly. Nothing burns until you sign."}
           </DialogDescription>
         </DialogHeader>
@@ -172,7 +172,9 @@ export function WalletDialog() {
                   href={wallet.href}
                   className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
                 >
-                  <span className="flex size-9 items-center justify-center rounded-sm bg-primary text-sm font-medium text-primary-foreground">
+                  <span
+                    className={`flex size-9 items-center justify-center rounded-sm text-sm font-semibold ${wallet.markClass}`}
+                  >
                     {wallet.mark}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
@@ -195,15 +197,15 @@ export function WalletDialog() {
                 }}
                 className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)]"
               >
-                <span className="flex size-9 items-center justify-center rounded-sm bg-surface">
-                  <Copy className="size-4" />
+                <span className="flex size-9 items-center justify-center rounded-sm bg-[#CCFF00] text-sm font-semibold text-black">
+                  {copied ? <Copy className="size-4" /> : "R"}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-sm font-medium">Robinhood Wallet</span>
                   <span className="text-xs text-muted-foreground">
                     {copied
                       ? "Link copied — paste it in the Web3 browser"
-                      : "Copy link, then open Web3 in the Robinhood app"}
+                      : "Copy link, open Web3 in Robinhood, then paste"}
                   </span>
                 </span>
               </button>
