@@ -39,9 +39,13 @@ async function availableConnectors(connectors: readonly Connector[]) {
     }
   }
 
-  found.sort(
-    (a, b) => Number(Boolean(b.connector.icon)) - Number(Boolean(a.connector.icon)),
-  );
+  // WalletConnect first, then connectors that have a real icon.
+  found.sort((a, b) => {
+    const aWc = a.connector.type === "walletConnect" ? 0 : 1;
+    const bWc = b.connector.type === "walletConnect" ? 0 : 1;
+    if (aWc !== bWc) return aWc - bWc;
+    return Number(Boolean(b.connector.icon)) - Number(Boolean(a.connector.icon));
+  });
 
   const seenProviders = new Set<unknown>();
   const seenNames = new Set<string>();
@@ -89,7 +93,11 @@ export function WalletDialog() {
     };
   }, [open, connectors]);
 
-  const showMobileHandoff = mobile && probed && ready.length === 0;
+  const injectedReady = ready.filter((c) => c.type !== "walletConnect");
+  const onlyWalletConnect =
+    ready.length > 0 && injectedReady.length === 0;
+  // Deep links when no extension is injected (Safari/Chrome mobile).
+  const showMobileHandoff = mobile && probed && injectedReady.length === 0;
 
   async function onConnect(connector: Connector) {
     setError(null);
@@ -115,7 +123,7 @@ export function WalletDialog() {
           <DialogTitle>Connect a wallet</DialogTitle>
           <DialogDescription>
             {showMobileHandoff
-              ? "Safari and Chrome can’t see wallet apps. Pick one below to open Pyre inside that app, then connect there."
+              ? "Use WalletConnect for any wallet, or open Pyre inside MetaMask / Rainbow."
               : "Pyre reads Robinhood Chain (4663) directly. Nothing burns until you sign."}
           </DialogDescription>
         </DialogHeader>
@@ -148,12 +156,18 @@ export function WalletDialog() {
                     )}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-sm font-medium">{connector.name}</span>
+                    <span className="text-sm font-medium">
+                      {connector.type === "walletConnect"
+                        ? "WalletConnect"
+                        : connector.name}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {pendingId === connector.uid
                         ? "Waiting for approval…"
                         : connector.type === "walletConnect"
-                          ? "Scan a QR code"
+                          ? mobile
+                            ? "Open any wallet app"
+                            : "Scan a QR code with your phone"
                           : "Installed in this browser"}
                     </span>
                   </span>
@@ -165,52 +179,57 @@ export function WalletDialog() {
         ) : null}
 
         {showMobileHandoff ? (
-          <ul className="flex flex-col gap-2">
-            {mobileWalletLinks(dappUrl).map((wallet) => (
-              <li key={wallet.id}>
-                <a
-                  href={wallet.href}
-                  className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
-                >
-                  <span
-                    className={`flex size-9 items-center justify-center rounded-sm text-sm font-semibold ${wallet.markClass}`}
+          <>
+            {onlyWalletConnect ? (
+              <p className="text-xs text-muted-foreground">Or open directly in an app</p>
+            ) : null}
+            <ul className="flex flex-col gap-2">
+              {mobileWalletLinks(dappUrl).map((wallet) => (
+                <li key={wallet.id}>
+                  <a
+                    href={wallet.href}
+                    className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)] transition-[box-shadow,background-color] duration-150 hover:shadow-[var(--shadow-border-hover)]"
                   >
-                    {wallet.mark}
+                    <span
+                      className={`flex size-9 items-center justify-center rounded-sm text-sm font-semibold ${wallet.markClass}`}
+                    >
+                      {wallet.mark}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-sm font-medium">{wallet.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {wallet.hint}
+                      </span>
+                    </span>
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  </a>
+                </li>
+              ))}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(dappUrl).then(() => {
+                      setCopied(true);
+                    });
+                  }}
+                  className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)]"
+                >
+                  <span className="flex size-9 items-center justify-center rounded-sm bg-[#CCFF00] text-sm font-semibold text-black">
+                    {copied ? <Copy className="size-4" /> : "R"}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-sm font-medium">{wallet.name}</span>
+                    <span className="text-sm font-medium">Robinhood Wallet</span>
                     <span className="text-xs text-muted-foreground">
-                      {wallet.hint}
+                      {copied
+                        ? "Link copied — paste it in the Web3 browser"
+                        : "Copy link, open Web3 in Robinhood, then paste"}
                     </span>
                   </span>
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                </a>
+                </button>
               </li>
-            ))}
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(dappUrl).then(() => {
-                    setCopied(true);
-                  });
-                }}
-                className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)]"
-              >
-                <span className="flex size-9 items-center justify-center rounded-sm bg-[#CCFF00] text-sm font-semibold text-black">
-                  {copied ? <Copy className="size-4" /> : "R"}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="text-sm font-medium">Robinhood Wallet</span>
-                  <span className="text-xs text-muted-foreground">
-                    {copied
-                      ? "Link copied — paste it in the Web3 browser"
-                      : "Copy link, open Web3 in Robinhood, then paste"}
-                  </span>
-                </span>
-              </button>
-            </li>
-          </ul>
+            </ul>
+          </>
         ) : null}
 
         {probed && ready.length === 0 && !mobile ? (
