@@ -215,7 +215,7 @@ export function WalletDialog() {
                   }}
                   className="flex h-14 w-full items-center gap-3 rounded-md bg-background px-3 text-left shadow-[var(--shadow-border)]"
                 >
-                  <span className="flex size-9 items-center justify-center rounded-sm bg-[#CCFF00] text-sm font-semibold text-black">
+                  <span className="flex size-9 items-center justify-center rounded-sm bg-primary text-sm font-semibold text-primary-foreground">
                     {copied ? <Copy className="size-4" /> : "R"}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
