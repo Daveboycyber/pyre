@@ -366,7 +366,7 @@ export function CleanerPage() {
               </div>
             ) : null}
 
-            {summary.actions === 0 &&
+            {reviewable.length === 0 &&
             visibleLocked.length === 0 &&
             visibleDust.length === 0 &&
             dismissedAssets.length === 0 ? (
