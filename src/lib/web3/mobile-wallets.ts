@@ -35,13 +35,14 @@ export type MobileWalletLink = {
 export function mobileWalletLinks(dappUrl: string): MobileWalletLink[] {
   const encoded = encodeURIComponent(dappUrl);
   const noProto = dappUrl.replace(/^https?:\/\//, "");
+  const greenMark = "bg-primary text-primary-foreground";
   return [
     {
       id: "metamask",
       name: "MetaMask",
       hint: "Opens Pyre inside the MetaMask app",
       href: `https://metamask.app.link/dapp/${noProto}`,
-      markClass: "bg-[#E2761B] text-white",
+      markClass: greenMark,
       mark: "M",
     },
     {
@@ -49,8 +50,7 @@ export function mobileWalletLinks(dappUrl: string): MobileWalletLink[] {
       name: "Rainbow",
       hint: "Opens Pyre inside the Rainbow app",
       href: `https://rnbwapp.com/dapp?url=${encoded}`,
-      markClass:
-        "bg-gradient-to-br from-[#FF4000] via-[#FA0] to-[#15C] text-white",
+      markClass: greenMark,
       mark: "R",
     },
   ];
