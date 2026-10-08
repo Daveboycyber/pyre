@@ -143,11 +143,13 @@ function useWalletCleanerState() {
       const connector = connectors.find(
         (c) => c.uid === connectorId || c.id === connectorId,
       );
-      if (!connector) return;
-      setOpen(false);
+      if (!connector) {
+        throw new Error("That wallet is not available in this browser.");
+      }
       setDemo(false);
       setLastClean(null);
       await connectAsync({ connector });
+      setOpen(false);
     },
     [connectors, connectAsync],
   );
