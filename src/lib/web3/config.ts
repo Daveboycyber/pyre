@@ -2,9 +2,14 @@ import { createConfig, http, injected } from "wagmi";
 import { walletConnect } from "wagmi/connectors";
 import { robinhoodChain } from "./chain";
 
-const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as
-  | string
-  | undefined;
+/**
+ * Reown / WalletConnect Cloud project ID.
+ * Safe to ship in the client bundle — VITE_ vars are public by design.
+ * Override with VITE_WALLETCONNECT_PROJECT_ID in env if needed.
+ */
+const walletConnectProjectId =
+  (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined)?.trim() ||
+  "2d178360d703a086c6d769bf2dc2afae";
 
 /**
  * One injected connector + EIP-6963 discovery.
@@ -25,23 +30,19 @@ const connectors = [
           : undefined,
     }),
   }),
-  ...(walletConnectProjectId
-    ? [
-        walletConnect({
-          projectId: walletConnectProjectId,
-          showQrModal: true,
-          metadata: {
-            name: "Pyre",
-            description: "Robinhood Chain wallet cleaner",
-            url:
-              typeof window !== "undefined"
-                ? window.location.origin
-                : "https://pyre-mu.vercel.app",
-            icons: [],
-          },
-        }),
-      ]
-    : []),
+  walletConnect({
+    projectId: walletConnectProjectId,
+    showQrModal: true,
+    metadata: {
+      name: "Pyre",
+      description: "Robinhood Chain wallet cleaner",
+      url:
+        typeof window !== "undefined"
+          ? window.location.origin
+          : "https://pyre-mu.vercel.app",
+      icons: ["https://pyre-mu.vercel.app/favicon.ico"],
+    },
+  }),
 ];
 
 export const wagmiConfig = createConfig({
@@ -54,7 +55,7 @@ export const wagmiConfig = createConfig({
   ssr: true,
 });
 
-export const walletConnectEnabled = Boolean(walletConnectProjectId);
+export const walletConnectEnabled = true;
 
 declare module "wagmi" {
   interface Register {
