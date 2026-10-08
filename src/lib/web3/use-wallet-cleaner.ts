@@ -31,6 +31,7 @@ import {
 import {
   dismissAsset,
   getDismissedIds,
+  pruneDismissedToHeld,
   undismissAsset,
 } from "./dismissed";
 import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees";
@@ -112,7 +113,11 @@ function useWalletCleanerState() {
       await ensureRobinhood();
       await ensureStockRegistry();
       const built = await buildAssetsForAddress(address, publicClient);
-      const dismissed = getDismissedIds(address);
+      // Only keep dismiss entries for tokens still returned by the scan.
+      const dismissed = pruneDismissedToHeld(
+        address,
+        built.map((a) => a.id),
+      );
       setDismissedIds(dismissed);
       const stillHeld = built.filter(
         (a) =>
