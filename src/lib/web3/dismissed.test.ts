@@ -9,5 +9,6 @@ describe("dismissed module exports", () => {
     assert.equal(typeof mod.dismissAsset, "function");
     assert.equal(typeof mod.undismissAsset, "function");
     assert.equal(typeof mod.clearDismissed, "function");
+    assert.equal(typeof mod.pruneDismissedToHeld, "function");
   });
 });
