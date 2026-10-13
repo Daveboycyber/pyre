@@ -1,8 +1,9 @@
-import { encodeFunctionData, type Abi } from "viem";
+import { encodeFunctionData, type Abi, type PublicClient } from "viem";
 import {
   PYRE_BATCH_ADDRESS,
   TREASURY_ADDRESS,
   pyreBatchIsDeployed,
+  resolveBatchFee,
 } from "./fees";
 
 export const pyreBatchAbi = [
@@ -44,6 +45,23 @@ export type FeeTx = {
   data: `0x${string}`;
   value: bigint;
 };
+
+/**
+ * Fee to send for a batch the user was quoted `shownWei` for. When PyreBatch
+ * is deployed its `protocolFee()` is the source of truth, not the env value.
+ */
+export async function batchFeeToSend(
+  publicClient: PublicClient,
+  shownWei: bigint,
+): Promise<bigint> {
+  if (!pyreBatchIsDeployed()) return shownWei;
+  const onChain = (await publicClient.readContract({
+    address: PYRE_BATCH_ADDRESS,
+    abi: pyreBatchAbi,
+    functionName: "protocolFee",
+  })) as bigint;
+  return resolveBatchFee(shownWei, onChain);
+}
 
 /** Build the single fee payment that must land before any batch burns. */
 export function buildFeeTx(feeWei: bigint): FeeTx {

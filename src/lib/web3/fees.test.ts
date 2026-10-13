@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BATCH_THRESHOLD, isBatch, protocolFeeWei, TREASURY_ADDRESS, treasuryIsLive } from "./fees.ts";
+import { BATCH_THRESHOLD, isBatch, protocolFeeWei, resolveBatchFee, TREASURY_ADDRESS, treasuryIsLive } from "./fees.ts";
 
 test("single actions are free", () => {
   assert.equal(isBatch(0), false);
@@ -23,4 +23,14 @@ test("treasury is the live payout address", () => {
     TREASURY_ADDRESS.toLowerCase(),
     "0xd456de00cb1b20f90d7f7f2a5a38f211f5bb88d6",
   );
+});
+
+test("on-chain fee at or below the quoted fee is what gets sent", () => {
+  assert.equal(resolveBatchFee(500n, 500n), 500n);
+  assert.equal(resolveBatchFee(500n, 300n), 300n);
+  assert.equal(resolveBatchFee(500n, 0n), 0n);
+});
+
+test("on-chain fee above the quoted fee stops the clean", () => {
+  assert.throws(() => resolveBatchFee(500n, 501n), /Rescan before cleaning/);
 });

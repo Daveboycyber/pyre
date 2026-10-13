@@ -3,13 +3,14 @@ import {
   TREASURY_ADDRESS,
   treasuryIsLive,
 } from "./fees";
-import { sweepCutWei, sweepNetWei } from "./sweep";
+import { sweepCutWei } from "./sweep";
 import {
   UNISWAP_QUOTER_V2,
   UNISWAP_SWAP_ROUTER_02,
   WETH_ADDRESS,
 } from "./chain";
 import { erc20Abi } from "./actions";
+import { assertReceiptSuccess, unwrappedWei } from "./receipt";
 
 const FEE_TIERS = [100, 500, 3000, 10_000] as const;
 const SLIPPAGE_BPS = 100n;
@@ -159,12 +160,15 @@ async function ensureAllowance(
       args: [spender, amount],
     }),
   });
-  await publicClient.waitForTransactionReceipt({ hash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  assertReceiptSuccess(receipt, "Swap approval");
 }
 
 /**
  * Swap token → ETH via Uniswap SwapRouter02, then send the 1.25% cut to
- * treasury when one is configured. Returns the net ETH the user kept.
+ * treasury when one is configured. Amounts are taken from the swap receipt,
+ * not the scan-time quote. If the cut tx is declined or fails the swap still
+ * stands: `cutWei` is 0 and `cutError` says why.
  */
 export async function executeSweepSwap(opts: {
   publicClient: PublicClient;
@@ -174,13 +178,18 @@ export async function executeSweepSwap(opts: {
   amountIn: bigint;
   fee: number;
   quoteWei: bigint;
-}): Promise<{ recoveredWei: bigint; cutWei: bigint; hash: `0x${string}` }> {
+}): Promise<{
+  recoveredWei: bigint;
+  cutWei: bigint;
+  hash: `0x${string}`;
+  cutError?: unknown;
+}> {
   const { publicClient, walletClient, owner, token, amountIn, fee, quoteWei } =
     opts;
   const minOut = minOutFromQuote(quoteWei);
-  const cutWei = treasuryIsLive() ? sweepCutWei(quoteWei) : 0n;
 
   let hash: `0x${string}`;
+  let grossWei: bigint;
   if (token.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
     hash = await walletClient.sendTransaction({
       to: WETH_ADDRESS,
@@ -198,7 +207,9 @@ export async function executeSweepSwap(opts: {
         args: [amountIn],
       }),
     });
-    await publicClient.waitForTransactionReceipt({ hash });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    assertReceiptSuccess(receipt, "WETH unwrap");
+    grossWei = amountIn;
   } else {
     await ensureAllowance(
       publicClient,
@@ -236,16 +247,30 @@ export async function executeSweepSwap(opts: {
         args: [[swapData, unwrapData]],
       }),
     });
-    await publicClient.waitForTransactionReceipt({ hash });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    assertReceiptSuccess(receipt, "Swap");
+    // minOut is a floor; the unwrap event says what was really paid out.
+    grossWei =
+      unwrappedWei(receipt.logs, WETH_ADDRESS, UNISWAP_SWAP_ROUTER_02) ?? minOut;
   }
 
+  let cutWei = treasuryIsLive() ? sweepCutWei(grossWei) : 0n;
+  let cutError: unknown;
   if (cutWei > 0n) {
-    const cutHash = await walletClient.sendTransaction({
-      to: TREASURY_ADDRESS,
-      value: cutWei,
-    });
-    await publicClient.waitForTransactionReceipt({ hash: cutHash });
+    try {
+      const cutHash = await walletClient.sendTransaction({
+        to: TREASURY_ADDRESS,
+        value: cutWei,
+      });
+      const cutReceipt = await publicClient.waitForTransactionReceipt({
+        hash: cutHash,
+      });
+      assertReceiptSuccess(cutReceipt, "Sweep cut");
+    } catch (err) {
+      cutError = err;
+      cutWei = 0n;
+    }
   }
 
-  return { recoveredWei: sweepNetWei(quoteWei), cutWei, hash };
+  return { recoveredWei: grossWei - cutWei, cutWei, hash, cutError };
 }

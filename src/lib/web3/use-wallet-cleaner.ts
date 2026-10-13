@@ -21,7 +21,8 @@ import { ensureStockRegistry } from "./stock-tokens";
 import { disposeErc20, disposeErc721, revokeApproval } from "./execute";
 import { actionErrorMessage } from "./tx-error";
 import { DEMO_ADDRESS } from "./demo-assets";
-import { buildFeeTx } from "./batch";
+import { batchFeeToSend, buildFeeTx } from "./batch";
+import { assertReceiptSuccess } from "./receipt";
 import {
   addCredits,
   creditsEarnedFromClean,
@@ -276,14 +277,18 @@ function useWalletCleanerState() {
           setFeeStatus("idle");
         } else {
           if (!walletClient || !publicClient) throw new Error("Wallet not ready");
-          const feeTx = buildFeeTx(feeWei);
-          const hash = await walletClient.sendTransaction({
-            ...feeTx,
-            account: address,
-            chain: robinhoodChain,
-          });
-          await publicClient.waitForTransactionReceipt({ hash });
-          feePaid = true;
+          feeWei = await batchFeeToSend(publicClient, feeWei);
+          if (feeWei > 0n) {
+            const feeTx = buildFeeTx(feeWei);
+            const hash = await walletClient.sendTransaction({
+              ...feeTx,
+              account: address,
+              chain: robinhoodChain,
+            });
+            const receipt = await publicClient.waitForTransactionReceipt({ hash });
+            assertReceiptSuccess(receipt, "Protocol fee");
+            feePaid = true;
+          }
           setFeeStatus("done");
         }
       } catch (err) {
@@ -330,6 +335,10 @@ function useWalletCleanerState() {
             });
             recoveredWei += result.recoveredWei;
             cutWei += result.cutWei;
+            if (result.cutError) {
+              // The swap landed; only the treasury cut did not. Not a failed line.
+              lastError = `${asset.symbol} swapped, but the sweep cut was not paid: ${actionErrorMessage(result.cutError)}`;
+            }
             txs.push({
               label: asset.symbol,
               hash: result.hash,
