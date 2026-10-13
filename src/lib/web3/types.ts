@@ -3,6 +3,8 @@ export type ScanStatus = "idle" | "scanning" | "ready" | "signing" | "done";
 export type AssetKind = "token" | "nft" | "approval";
 export type AssetAction = "burn" | "revoke" | "sweep" | "dust-swap";
 
+export type ClassificationLabel = "stock" | "stable" | "spam" | "unknown";
+
 export type WalletAsset = {
   id: string;
   kind: AssetKind;
@@ -17,6 +19,10 @@ export type WalletAsset = {
   selected: boolean;
   protected?: boolean;
   spam?: boolean;
+  /** Evidence-based classifier output (scan-time). */
+  classificationLabel?: ClassificationLabel;
+  classificationConfidence?: number;
+  classificationReasons?: string[];
   txStatus?: "pending" | "done" | "failed";
   txError?: string;
   quoteWei?: bigint;

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isProtectedHolding, isStockToken } from "./classify.ts";
+import {
+  classifyHolding,
+  isProtectedHolding,
+  isStockToken,
+} from "./classify.ts";
 import { STOCK_SYMBOLS } from "./stock-tokens.ts";
 
 test("fallback symbols protect major Stock Token tickers", () => {
@@ -21,4 +25,43 @@ test("unknown address with a stock ticker still locks (fail closed)", () => {
     isProtectedHolding("META", "0x1111111111111111111111111111111111111111"),
     true,
   );
+});
+
+test("classifyHolding attaches reasons for stock symbol", () => {
+  const c = classifyHolding({ symbol: "AAPL" });
+  assert.equal(c.label, "stock");
+  assert.equal(c.protected, true);
+  assert.ok(c.confidence >= 0.8);
+  assert.ok(c.reasons.includes("symbol_in_stock_registry"));
+});
+
+test("classifyHolding flags spam patterns with evidence", () => {
+  const c = classifyHolding({
+    name: "Claim free airdrop at www.scam.com",
+    symbol: "FREE",
+  });
+  assert.equal(c.label, "spam");
+  assert.equal(c.spam, true);
+  assert.ok(c.reasons.some((r) => r.startsWith("spam_pattern:")));
+});
+
+test("stock symbol beats spam-looking name", () => {
+  const c = classifyHolding({
+    symbol: "AAPL",
+    name: "visit claim.reward.app",
+  });
+  assert.equal(c.label, "stock");
+  assert.equal(c.protected, true);
+  assert.equal(c.spam, false);
+});
+
+test("unknown holding has low confidence", () => {
+  const c = classifyHolding({
+    symbol: "XYZ123",
+    name: "Some token",
+    address: "0x2222222222222222222222222222222222222222",
+  });
+  assert.equal(c.label, "unknown");
+  assert.ok(c.confidence < 0.5);
+  assert.ok(c.reasons.includes("no_positive_signals"));
 });
