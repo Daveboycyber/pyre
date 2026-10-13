@@ -41,8 +41,9 @@ export const TREASURY_ADDRESS = readAddress(
   LIVE_TREASURY,
 );
 
+/** Hardened PyreBatch (self-only clean, fee cap, 2-step ownership). */
 const LIVE_PYRE_BATCH =
-  "0x92C5eAaBdaDFF7575c3f19B6ce3f86e8F9b5126B" as const;
+  "0xcB157e4D7035F9a38b9e0B92b89E544e378c1490" as const;
 
 /** PyreBatch on Robinhood Chain — batch fees go through collectFee(). */
 export const PYRE_BATCH_ADDRESS = readAddress(
