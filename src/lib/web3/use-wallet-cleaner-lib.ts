@@ -1,7 +1,7 @@
 import { usePublicClient } from "wagmi";
 import { KNOWN_SPENDERS } from "./chain";
 import { fetchTokenBalances, tokenContractAddress } from "./blockscout";
-import { isProtectedHolding, looksLikeSpam } from "./classify";
+import { classifyHolding } from "./classify";
 import { erc20Abi, erc721Abi } from "./actions";
 import { DEMO_ASSETS } from "./demo-assets";
 import { PROTOCOL_FEE_WEI, protocolFeeWei } from "./fees";
@@ -12,6 +12,21 @@ import {
   withSweepFlags,
 } from "./sweep";
 import type { Mode, WalletAsset } from "./types";
+
+function classifyFields(
+  symbol: string | null | undefined,
+  name: string | null | undefined,
+  address?: string | null,
+) {
+  const c = classifyHolding({ symbol, name, address });
+  return {
+    protected: c.protected,
+    spam: c.spam,
+    classificationLabel: c.label,
+    classificationConfidence: c.confidence,
+    classificationReasons: c.reasons,
+  } as const;
+}
 
 export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types";
 
@@ -162,8 +177,7 @@ export async function buildAssetsForAddress(
       amount: display,
       amountRaw: raw,
       selected: false,
-      protected: isProtectedHolding(symbol, contract),
-      spam: looksLikeSpam(b.token.name, symbol),
+      ...classifyFields(symbol, b.token.name, contract),
     });
   }
 
@@ -180,7 +194,7 @@ export async function buildAssetsForAddress(
       symbol: b.token.symbol ?? "NFT",
       amount: "1",
       selected: false,
-      spam: looksLikeSpam(b.token.name, b.token.symbol),
+      ...classifyFields(b.token.symbol, b.token.name, contract),
     });
   }
 
@@ -242,6 +256,9 @@ export async function buildAssetsForAddress(
                 amount: value > 2n ** 200n ? "Unlimited" : value.toString(),
                 selected: false,
                 spam: true,
+                classificationLabel: "spam",
+                classificationConfidence: 0.9,
+                classificationReasons: ["open_spender_allowance"],
               });
             }
           } else {
@@ -261,6 +278,9 @@ export async function buildAssetsForAddress(
                 amount: "All items",
                 selected: false,
                 spam: true,
+                classificationLabel: "spam",
+                classificationConfidence: 0.9,
+                classificationReasons: ["open_operator_approval"],
               });
             }
           }
