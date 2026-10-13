@@ -1,9 +1,12 @@
 /**
  * Robinhood Stock Token registry (chain 4663).
  *
- * Browser calls to api.robinhood.com fail CORS from the Vercel origin.
- * We seed from a same-origin snapshot at /stock-tokens.json (in public/),
- * then best-effort refresh from the live Robinhood API.
+ * Live list: https://api.robinhood.com/rhj/assets
+ * That host does not send Access-Control-Allow-Origin, so browser fetches
+ * from the Vercel app origin fail. We still try:
+ *   1) same-origin /stock-tokens.json snapshot (if present)
+ *   2) live Robinhood API (works in non-browser contexts)
+ * and always fall back to FALLBACK_SYMBOLS so scan is never hard-blocked.
  */
 
 export type StockToken = {
@@ -12,11 +15,12 @@ export type StockToken = {
   name: string;
 };
 
-/** Popular tickers always treated as stock even before the list is ready. */
+/** Popular tickers always treated as stock. */
 const FALLBACK_SYMBOLS = [
   "NVDA", "AAPL", "GOOGL", "GOOG", "AMZN", "META", "TSLA", "MSFT", "QQQ", "SPY",
   "AMD", "AVGO", "COIN", "COST", "CRM", "CRWD", "DIS", "HOOD", "INTC", "NFLX",
   "ORCL", "PLTR", "SHOP", "UBER", "V", "XOM", "BABA", "BA", "JPM", "GS",
+  "ASML", "APP", "ARM", "SMCI", "MSTR", "HOOD", "NU", "SOFI", "RIVN", "LCID",
 ];
 
 export const STOCK_BY_ADDRESS = new Map<string, StockToken>();
@@ -45,23 +49,20 @@ function ingest(
   }
 }
 
-const FETCH_ATTEMPTS = 3;
+const FETCH_ATTEMPTS = 2;
 
 /**
- * Populate the Stock Token map. Prefer same-origin snapshot (CORS-safe),
- * then try live Robinhood. Throws only if both leave the map empty.
+ * Populate the Stock Token map. Never blocks scan: symbol fallback always
+ * remains. Address map is filled when snapshot or live API succeeds.
  */
 export async function ensureStockRegistry(): Promise<void> {
   if (loaded) return;
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
-    let lastError: unknown;
-
     try {
       await loadSnapshot();
     } catch (err) {
-      lastError = err;
-      console.warn("[pyre] stock token snapshot failed", err);
+      console.warn("[pyre] stock token snapshot unavailable", err);
     }
 
     for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
@@ -69,23 +70,17 @@ export async function ensureStockRegistry(): Promise<void> {
         await fetchStockRegistry();
         break;
       } catch (err) {
-        lastError = err;
         console.warn(
           `[pyre] live stock registry fetch failed (attempt ${attempt}/${FETCH_ATTEMPTS})`,
           err,
         );
         if (attempt < FETCH_ATTEMPTS) {
-          await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+          await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
         }
       }
     }
 
-    if (STOCK_BY_ADDRESS.size === 0) {
-      throw new Error(
-        "Could not load the Robinhood Stock Token list, so Stock Tokens cannot be protected. Try scanning again.",
-        { cause: lastError },
-      );
-    }
+    // Always ready: FALLBACK_SYMBOLS protect major tickers even with no addresses.
     loaded = true;
   })().finally(() => {
     loadPromise = null;
