@@ -1,8 +1,11 @@
 /**
  * Robinhood Stock Token registry (chain 4663).
- * Address map is filled from https://api.robinhood.com/rhj/assets at scan time.
- * Symbol set is a fail-closed fallback so lookalike tickers stay locked offline.
+ * Live list: https://api.robinhood.com/rhj/assets
+ * Browser calls to that host fail CORS from Vercel, so we always seed from
+ * `stock-token-snapshot.ts` and treat the live fetch as a best-effort refresh.
  */
+
+import { STOCK_TOKEN_SNAPSHOT } from "./stock-token-snapshot";
 
 export type StockToken = {
   symbol: string;
@@ -10,7 +13,7 @@ export type StockToken = {
   name: string;
 };
 
-/** Popular tickers always treated as stock even before the network list loads. */
+/** Popular tickers always treated as stock even before the list is ready. */
 const FALLBACK_SYMBOLS = [
   "NVDA", "AAPL", "GOOGL", "GOOG", "AMZN", "META", "TSLA", "MSFT", "QQQ", "SPY",
   "AMD", "AVGO", "COIN", "COST", "CRM", "CRWD", "DIS", "HOOD", "INTC", "NFLX",
@@ -27,27 +30,44 @@ export function stockRegistryReady() {
   return loaded;
 }
 
+function ingest(
+  entries: ReadonlyArray<{ symbol: string; name: string; address: string }>,
+) {
+  for (const e of entries) {
+    const symbol = e.symbol.trim();
+    if (!symbol || !e.address) continue;
+    STOCK_SYMBOLS.add(symbol.toUpperCase());
+    const address = e.address as `0x${string}`;
+    STOCK_BY_ADDRESS.set(address.toLowerCase(), {
+      symbol,
+      address,
+      name: (e.name || symbol).trim(),
+    });
+  }
+}
+
 const FETCH_ATTEMPTS = 3;
 
 /**
- * Load the live Stock Token list. Throws if every attempt fails: the 30
- * fallback tickers are not enough to protect a real wallet, so callers must
- * not offer cleaning on a failed load. A later call retries.
+ * Ensure the Stock Token map is populated. Seeds the committed snapshot first
+ * (CORS-safe), then tries to refresh from Robinhood. Only throws if the map
+ * is still empty after both paths — which should not happen with a snapshot.
  */
 export async function ensureStockRegistry(): Promise<void> {
   if (loaded) return;
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
+    ingest(STOCK_TOKEN_SNAPSHOT);
+
     let lastError: unknown;
     for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
       try {
         await fetchStockRegistry();
-        loaded = true;
-        return;
+        break;
       } catch (err) {
         lastError = err;
-        console.error(
-          `[pyre] stock registry fetch failed (attempt ${attempt}/${FETCH_ATTEMPTS})`,
+        console.warn(
+          `[pyre] live stock registry fetch failed (attempt ${attempt}/${FETCH_ATTEMPTS}); snapshot still active`,
           err,
         );
         if (attempt < FETCH_ATTEMPTS) {
@@ -55,10 +75,14 @@ export async function ensureStockRegistry(): Promise<void> {
         }
       }
     }
-    throw new Error(
-      "Could not load the Robinhood Stock Token list, so Stock Tokens cannot be protected. Try scanning again.",
-      { cause: lastError },
-    );
+
+    if (STOCK_BY_ADDRESS.size === 0) {
+      throw new Error(
+        "Could not load the Robinhood Stock Token list, so Stock Tokens cannot be protected. Try scanning again.",
+        { cause: lastError },
+      );
+    }
+    loaded = true;
   })().finally(() => {
     loadPromise = null;
   });
@@ -78,24 +102,22 @@ async function fetchStockRegistry() {
     }>;
   };
   let onChain = 0;
+  const rows: Array<{ symbol: string; name: string; address: string }> = [];
   for (const a of data.assets ?? []) {
     const symbol = (a.tokenSymbol ?? "").trim();
     if (!symbol) continue;
-    STOCK_SYMBOLS.add(symbol.toUpperCase());
     for (const d of a.deployments ?? []) {
       if (Number(d.chainId) !== 4663 || !d.contractAddress) continue;
-      const address = d.contractAddress as `0x${string}`;
-      const entry: StockToken = {
+      rows.push({
         symbol,
-        address,
         name: (a.tokenName ?? symbol).trim(),
-      };
-      STOCK_BY_ADDRESS.set(address.toLowerCase(), entry);
+        address: d.contractAddress,
+      });
       onChain += 1;
     }
   }
-  // An OK response with no chain 4663 deployments protects nothing.
   if (onChain === 0) throw new Error("assets list has no chain 4663 tokens");
+  ingest(rows);
 }
 
 export const STOCK_TOKENS: readonly StockToken[] = [];
