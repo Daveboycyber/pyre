@@ -62,6 +62,20 @@ export function protocolFeeWei(actionCount: number) {
   return isBatch(actionCount) ? PROTOCOL_FEE_WEI : 0n;
 }
 
+/**
+ * The fee to send, given what the user was shown and what PyreBatch charges
+ * on-chain. A lower on-chain fee is used as-is; a higher one throws so the
+ * user is never charged more than the review screen said.
+ */
+export function resolveBatchFee(shownWei: bigint, onChainWei: bigint) {
+  if (onChainWei > shownWei) {
+    throw new Error(
+      `Protocol fee changed to ${formatFeeEth(onChainWei)}. Rescan before cleaning.`,
+    );
+  }
+  return onChainWei;
+}
+
 export function formatFeeEth(wei: bigint) {
   const eth = formatEther(wei);
   const trimmed = eth
