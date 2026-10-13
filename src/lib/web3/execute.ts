@@ -108,14 +108,23 @@ async function sendAndWait(
   return hash;
 }
 
-/** Pick a calldata path that simulates, send it, then verify balance dropped. */
+/**
+ * Pick a calldata path that simulates, send it, then check balance.
+ * Sticky balanceOf after a successful receipt is common on spam tokens —
+ * we still count the burn as done and let the cleaner dismiss the row.
+ */
 export async function disposeErc20(opts: {
   publicClient: PublicClient;
   walletClient: TxClient;
   owner: `0x${string}`;
   token: `0x${string}`;
   amount: bigint;
-}): Promise<{ alreadyGone?: boolean; hash?: `0x${string}` }> {
+}): Promise<{
+  alreadyGone?: boolean;
+  hash?: `0x${string}`;
+  /** Receipt ok but balanceOf did not drop (non-standard / spam token). */
+  stickyBalance?: boolean;
+}> {
   const { publicClient, walletClient, owner, token } = opts;
   let amount = opts.amount;
   let liveBefore: bigint | null = null;
@@ -164,7 +173,8 @@ export async function disposeErc20(opts: {
     picked.data,
   );
 
-  // Post-execute verify: balance must have decreased (or read failed → trust receipt).
+  // Post-execute check: informational only for sticky spam balances.
+  let stickyBalance = false;
   try {
     const liveAfter = (await publicClient.readContract({
       address: token,
@@ -173,18 +183,13 @@ export async function disposeErc20(opts: {
       args: [owner],
     })) as bigint;
     if (liveBefore !== null && liveAfter >= liveBefore) {
-      throw new Error(
-        "Burn receipt succeeded but balance did not decrease — token may be non-standard",
-      );
+      stickyBalance = true;
     }
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("did not decrease")) {
-      throw err;
-    }
+  } catch {
     // balanceOf missing after burn — receipt still stands.
   }
 
-  return { hash };
+  return { hash, stickyBalance };
 }
 
 export async function disposeErc721(opts: {
