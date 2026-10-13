@@ -2,18 +2,22 @@
 pragma solidity ^0.8.24;
 
 /// @title PyreBatch
-/// @notice Phase 1 fee gate + try/catch multicall for Robinhood Chain.
+/// @notice Fee gate for Pyre on Robinhood Chain (+ optional self-executed multicall).
 ///
-/// `collectFee()` takes the protocol fee and forwards it to the treasury.
-/// `clean(calls)` does the same, then runs each call independently so one
-/// revert does not unwind the rest of the batch or the fee.
+/// EOA path (current app):
+///   1. User calls `collectFee()` once for a batch.
+///   2. User signs each burn/revoke from their own wallet.
 ///
-/// Burns and approval revokes must execute as the user. Use `clean` when this
-/// code runs in the user's account (EIP-7702 or a smart account). EOAs that
-/// cannot delegate call `collectFee` first, then sign each burn/revoke from
-/// the wallet — the app refuses to start those lines if the fee tx reverts.
+/// Smart-account / EIP-7702 path (future):
+///   When this bytecode is the *user's* account, `clean(calls)` may run
+///   because `msg.sender == address(this)`. It is NOT callable by third
+///   parties on a shared deployment — that would allow draining approvals.
 contract PyreBatch {
+    /// @notice Hard ceiling for protocolFee (constructor + setProtocolFee).
+    uint256 public constant MAX_PROTOCOL_FEE = 0.01 ether;
+
     address public owner;
+    address public pendingOwner;
     address payable public treasury;
     uint256 public protocolFee;
 
@@ -25,24 +29,37 @@ contract PyreBatch {
 
     error InsufficientFee();
     error NotOwner();
+    error NotPendingOwner();
+    error NotSelf();
     error FeeTransferFailed();
     error ZeroAddress();
+    error FeeTooHigh();
 
     event FeePaid(address indexed payer, uint256 amount);
     event CallFailed(uint256 index, bytes reason);
     event ProtocolFeeUpdated(uint256 fee);
     event TreasuryUpdated(address treasury);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
         _;
     }
 
+    /// @dev EIP-7702 / smart-account self-execution only.
+    modifier onlySelf() {
+        if (msg.sender != address(this)) revert NotSelf();
+        _;
+    }
+
     constructor(address payable treasury_, uint256 protocolFee_) {
         if (treasury_ == address(0)) revert ZeroAddress();
+        if (protocolFee_ > MAX_PROTOCOL_FEE) revert FeeTooHigh();
         owner = msg.sender;
         treasury = treasury_;
         protocolFee = protocolFee_;
+        emit OwnershipTransferred(address(0), msg.sender);
     }
 
     /// @notice Pay the flat batch fee with no calls. Used by EOA wallets
@@ -51,9 +68,10 @@ contract PyreBatch {
         _takeFee();
     }
 
-    /// @notice Take the fee, then execute each call with try/catch semantics.
-    ///         The fee is charged once even if some calls fail.
-    function clean(Call[] calldata calls) external payable {
+    /// @notice Self-only multicall after taking the fee.
+    /// @dev Restricted to `msg.sender == address(this)` so a shared deployment
+    ///      cannot be used to drain approvals via arbitrary calls.
+    function clean(Call[] calldata calls) external payable onlySelf {
         _takeFee();
         for (uint256 i = 0; i < calls.length; i++) {
             (bool ok, bytes memory reason) = calls[i].target.call{
@@ -77,6 +95,7 @@ contract PyreBatch {
     }
 
     function setProtocolFee(uint256 next) external onlyOwner {
+        if (next > MAX_PROTOCOL_FEE) revert FeeTooHigh();
         protocolFee = next;
         emit ProtocolFeeUpdated(next);
     }
@@ -87,9 +106,26 @@ contract PyreBatch {
         emit TreasuryUpdated(next);
     }
 
+    /// @notice Begin two-step ownership transfer. `next` must call `acceptOwnership`.
     function transferOwnership(address next) external onlyOwner {
         if (next == address(0)) revert ZeroAddress();
-        owner = next;
+        pendingOwner = next;
+        emit OwnershipTransferStarted(owner, next);
+    }
+
+    /// @notice Complete ownership transfer. Only the pending owner may accept.
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NotPendingOwner();
+        address previous = owner;
+        owner = msg.sender;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(previous, msg.sender);
+    }
+
+    /// @notice Cancel a pending ownership transfer.
+    function renounceOwnershipTransfer() external onlyOwner {
+        pendingOwner = address(0);
+        emit OwnershipTransferStarted(owner, address(0));
     }
 
     receive() external payable {
