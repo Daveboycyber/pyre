@@ -26,6 +26,7 @@ import { assertReceiptSuccess } from "./receipt";
 import {
   addCredits,
   creditsEarnedFromClean,
+  creditsForFeeWithoutSuccess,
   getCredits,
   spendCredit,
 } from "./credits";
@@ -414,7 +415,16 @@ function useWalletCleanerState() {
     }
 
     setCurrentId(null);
-    const earned = !demo && address ? creditsEarnedFromClean(recoveredWei) : 0;
+    const successCount = tokens + nfts + approvals + swept + dustSwaps;
+    let earned = !demo && address ? creditsEarnedFromClean(recoveredWei) : 0;
+    if (!demo && address) {
+      earned += creditsForFeeWithoutSuccess({
+        feePaid,
+        feeWaived,
+        successCount,
+        failedCount: failed,
+      });
+    }
     if (earned > 0) {
       setCredits(addCredits(address, earned));
     }
