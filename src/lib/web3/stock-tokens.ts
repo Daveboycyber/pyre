@@ -1,11 +1,10 @@
 /**
  * Robinhood Stock Token registry (chain 4663).
- * Live list: https://api.robinhood.com/rhj/assets
- * Browser calls to that host fail CORS from Vercel, so we always seed from
- * `stock-token-snapshot.ts` and treat the live fetch as a best-effort refresh.
+ *
+ * Browser calls to api.robinhood.com fail CORS from the Vercel origin.
+ * We seed from a same-origin snapshot at /stock-tokens.json (in public/),
+ * then best-effort refresh from the live Robinhood API.
  */
-
-import { STOCK_TOKEN_SNAPSHOT } from "./stock-token-snapshot";
 
 export type StockToken = {
   symbol: string;
@@ -49,17 +48,22 @@ function ingest(
 const FETCH_ATTEMPTS = 3;
 
 /**
- * Ensure the Stock Token map is populated. Seeds the committed snapshot first
- * (CORS-safe), then tries to refresh from Robinhood. Only throws if the map
- * is still empty after both paths — which should not happen with a snapshot.
+ * Populate the Stock Token map. Prefer same-origin snapshot (CORS-safe),
+ * then try live Robinhood. Throws only if both leave the map empty.
  */
 export async function ensureStockRegistry(): Promise<void> {
   if (loaded) return;
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
-    ingest(STOCK_TOKEN_SNAPSHOT);
-
     let lastError: unknown;
+
+    try {
+      await loadSnapshot();
+    } catch (err) {
+      lastError = err;
+      console.warn("[pyre] stock token snapshot failed", err);
+    }
+
     for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
       try {
         await fetchStockRegistry();
@@ -67,7 +71,7 @@ export async function ensureStockRegistry(): Promise<void> {
       } catch (err) {
         lastError = err;
         console.warn(
-          `[pyre] live stock registry fetch failed (attempt ${attempt}/${FETCH_ATTEMPTS}); snapshot still active`,
+          `[pyre] live stock registry fetch failed (attempt ${attempt}/${FETCH_ATTEMPTS})`,
           err,
         );
         if (attempt < FETCH_ATTEMPTS) {
@@ -87,6 +91,28 @@ export async function ensureStockRegistry(): Promise<void> {
     loadPromise = null;
   });
   return loadPromise;
+}
+
+async function loadSnapshot() {
+  const res = await fetch("/stock-tokens.json", {
+    headers: { accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`snapshot ${res.status}`);
+  const data = (await res.json()) as Array<{
+    symbol?: string;
+    name?: string;
+    address?: string;
+  }>;
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("snapshot empty");
+  }
+  ingest(
+    data.map((r) => ({
+      symbol: r.symbol ?? "",
+      name: r.name ?? r.symbol ?? "",
+      address: r.address ?? "",
+    })),
+  );
 }
 
 async function fetchStockRegistry() {
