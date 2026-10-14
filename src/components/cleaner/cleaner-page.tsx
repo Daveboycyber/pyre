@@ -236,8 +236,7 @@ export function CleanerPage() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-5">
           <Link to="/" className="flex items-center gap-2">
-            <Logo className="size-7" />
-            <span className="text-sm font-medium">Pyre</span>
+            <Logo />
           </Link>
           {connected ? (
             <Button size="sm" variant="outline" onClick={() => void disconnect()}>

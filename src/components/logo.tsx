@@ -3,24 +3,11 @@ import { cn } from "@/lib/utils";
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="size-6 text-foreground"
-      >
+      <svg viewBox="0 0 32 32" aria-hidden="true" className="size-6 shrink-0">
+        <rect width="32" height="32" rx="7" fill="#1C1C1C" />
         <path
-          d="M5 20V10.2L12 4l7 6.2V20H5Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M9.5 20v-5.5h5V20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
+          fill="#CCFF00"
+          d="M16 5c5 7.4 9 11 9 16.4A9 9 0 1 1 7 21.4C7 16 11 12.4 16 5z"
         />
       </svg>
       <span className="text-[15px] font-medium tracking-tight">Pyre</span>
