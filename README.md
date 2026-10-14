@@ -55,15 +55,6 @@ EOA wallets only call `collectFee()`. `clean()` is self-only (`msg.sender == add
 
 ---
 
-## Tech stack
-
-- **App:** React 19, [TanStack Start](https://tanstack.com/start) / Router, Vite, Tailwind CSS, Radix UI
-- **Web3:** viem, wagmi (injected + EIP-6963, WalletConnect)
-- **Data:** Blockscout API v2, Uniswap and 1inch quotes
-- **Data store:** Neon Postgres, or PGLite when `DATABASE_URL` is unset
-- **Contracts:** Solidity 0.8.x, Foundry
-- **Hosting:** Vercel (Nitro output)
-
 ## Project layout
 
 ```
@@ -77,55 +68,9 @@ server/             Server middleware
 migrations/         SQL migrations
 ```
 
-## Getting started
-
-Requires **Node 24+** and npm.
-
-```bash
-git clone https://github.com/Daveboycyber/pyre.git
-cd pyre
-npm install          # .npmrc sets legacy-peer-deps for WalletConnect
-npm run dev          # http://localhost:8080
-```
-
-### Environment
-
-Everything has a working default. Set these only to override:
-
-| Variable | Purpose |
-|----------|---------|
-| `VITE_WALLETCONNECT_PROJECT_ID` | WalletConnect project id |
-| `VITE_ONEINCH_API_KEY` | 1inch quote API key (sweep routes) |
-| `VITE_PYRE_BATCH` | PyreBatch address |
-| `VITE_PYRE_TREASURY` | Treasury address shown in the UI |
-| `VITE_PYRE_FEE_WEI` | Display fee before the on-chain read |
-| `VITE_AUTH_ENABLED` | Set to `false` to disable sign-in |
-| `DATABASE_URL` | Neon Postgres. When unset, an embedded PGLite database is used |
-
-Put local overrides in `.env`, which is git-ignored. Never commit keys.
-
-### Scripts
-
-| Command | Does |
-|---------|------|
-| `npm run dev` | Dev server on port 8080 |
-| `npm run build` | Production build + DB migrations |
-| `npm test` | Node test runner (fees, receipts, sweep, classify, credits, dismiss, …) |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` / `format` | ESLint / Prettier |
-
 ## Security
 
 Pyre handles user funds, so please **do not open public issues for vulnerabilities**. Report them privately through [GitHub Security Advisories](https://github.com/Daveboycyber/pyre/security/advisories/new).
-
-## Contributing
-
-1. Fork the repo and branch from `main`.
-2. Use [Conventional Commits](https://www.conventionalcommits.org) (`feat:`, `fix:`, `docs:`, …).
-3. Run `npm test`, `npm run typecheck`, and `npm run lint` before opening a PR.
-4. Any change that can move user assets needs a test.
-
-Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Disclaimer
 
