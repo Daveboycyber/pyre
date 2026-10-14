@@ -70,7 +70,7 @@ migrations/         SQL migrations
 
 ## Security
 
-Pyre handles user funds, so please **do not open public issues for vulnerabilities**. Report them privately through [GitHub Security Advisories](https://github.com/Daveboycyber/pyre/security/advisories/new).
+Pyre handles user funds, so please **do not open public issues for vulnerabilities**. Report them privately. See [SECURITY.md](SECURITY.md) for how and what is in scope.
 
 ## Disclaimer
 
