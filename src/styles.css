@@ -132,6 +132,94 @@
   animation: lime-pulse 1.4s var(--ease-out) infinite;
 }
 
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(320px);
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.hero-preview {
+  animation:
+    rise 700ms var(--ease-smooth-out) 150ms both,
+    float 7s ease-in-out 1s infinite;
+}
+
+.preview-row {
+  animation: rise 500ms var(--ease-smooth-out) both;
+}
+
+.preview-check {
+  animation: pop 380ms var(--ease-smooth-out) both;
+}
+
+.preview-scan {
+  animation: scan-sweep 3.2s var(--ease-out) 600ms infinite;
+}
+
+.hero-glow {
+  background:
+    radial-gradient(60% 55% at 75% 35%, rgb(204 255 0 / 0.09), transparent 70%),
+    radial-gradient(40% 40% at 10% 0%, rgb(204 255 0 / 0.05), transparent 70%);
+}
+
+.lift {
+  transition:
+    transform 300ms var(--ease-smooth-out),
+    box-shadow 300ms var(--ease-smooth-out),
+    background-color 300ms var(--ease-smooth-out);
+}
+
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    var(--shadow-border-hover),
+    0 18px 40px -18px rgb(204 255 0 / 0.18);
+}
+
+/* Fade sections in as they scroll into view, where the browser supports it. */
+@supports (animation-timeline: view()) {
+  .on-scroll {
+    animation: rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -139,7 +227,21 @@
 
   .reveal > *,
   .scan-line,
-  .lime-pulse {
+  .lime-pulse,
+  .hero-preview,
+  .preview-row,
+  .preview-check,
+  .preview-scan,
+  .on-scroll {
     animation: none !important;
+  }
+
+  .preview-scan {
+    display: none;
+  }
+
+  .lift,
+  .lift:hover {
+    transform: none;
   }
 }

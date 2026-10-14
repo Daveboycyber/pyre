@@ -21,7 +21,7 @@ export function SiteHeader() {
   const { connected, address, setOpen, disconnect, demo } = useWalletCleaner();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/75 backdrop-blur-xl backdrop-saturate-150">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6">
         <Link to="/" className="text-foreground" aria-label="Pyre home">
           <Logo />
@@ -61,11 +61,7 @@ export function SiteHeader() {
               {shortAddress(address)}
             </Button>
           ) : (
-            <Button
-              size="sm"
-              onClick={() => setOpen(true)}
-              className="hidden sm:inline-flex"
-            >
+            <Button size="sm" onClick={() => setOpen(true)} className="hidden sm:inline-flex">
               Connect wallet
             </Button>
           )}
@@ -82,16 +78,8 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          "border-t border-border md:hidden",
-          menuOpen ? "block" : "hidden",
-        )}
-      >
-        <nav
-          className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-3"
-          aria-label="Mobile"
-        >
+      <div className={cn("border-t border-border md:hidden", menuOpen ? "block" : "hidden")}>
+        <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-3" aria-label="Mobile">
           {NAV.map((item) =>
             item.kind === "route" ? (
               <Link
