@@ -304,6 +304,24 @@
   }
 }
 
+/* Toast countdown: shrinks over the toast's lifetime, pauses on hover like the timer. */
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.pyre-toast-bar {
+  animation: toast-countdown linear forwards;
+}
+
+[data-sonner-toaster]:hover .pyre-toast-bar {
+  animation-play-state: paused;
+}
+
 /* Fade sections in as they scroll into view, where the browser supports it. */
 @supports (animation-timeline: view()) {
   .on-scroll {
@@ -327,9 +345,12 @@
   .marquee-track,
   .lock-click,
   .cta-button,
+  .cta-button:hover,
   .cta-button::before,
-  .on-scroll {
-    animation: none !important;
+  .pyre-toast-bar,
+  .on-scroll,
+  .group:hover .marquee-track {
+    animation: none;
   }
 
   .lift,
