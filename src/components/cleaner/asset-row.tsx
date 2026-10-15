@@ -1,9 +1,13 @@
 import { EyeOff, Lock, X } from "lucide-react";
 import { TxStatusIcon } from "@/components/cleaner/tx-status-icon";
 import { cn } from "@/lib/utils";
+import {
+  classificationReason,
+  classificationTitle,
+} from "@/lib/web3/classification-copy";
 import { formatFeeEth } from "@/lib/web3/fees";
 import { selectedAction, sweepNetWei } from "@/lib/web3/sweep";
-import type { Mode, WalletAsset } from "@/lib/web3/types";
+import type { ClassificationLabel, Mode, WalletAsset } from "@/lib/web3/types";
 
 function actionLabel(asset: WalletAsset, mode: Mode) {
   const action = selectedAction(asset, mode);
@@ -24,6 +28,13 @@ function detail(asset: WalletAsset) {
 function canSelect(asset: WalletAsset) {
   return !asset.protected || Boolean(asset.dust && asset.sweepable);
 }
+
+const BADGE_CLASS: Record<ClassificationLabel, string> = {
+  stock: "bg-primary/15 text-foreground",
+  stable: "bg-muted text-muted-foreground",
+  spam: "bg-primary text-primary-foreground",
+  unknown: "bg-muted text-muted-foreground",
+};
 
 function LeadingIcon({
   asset,
@@ -78,6 +89,8 @@ export function AssetRow({
   const subtitle = dismissed
     ? `hidden · ${asset.symbol}`
     : `${actionLabel(asset, mode)} · ${asset.symbol} · ${detail(asset)}`;
+  const label = asset.classificationLabel;
+  const reason = classificationReason(asset.classificationReasons);
 
   return (
     <div
@@ -97,8 +110,23 @@ export function AssetRow({
         onToggle={onToggle}
       />
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm">{asset.name}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm">{asset.name}</span>
+          {label ? (
+            <span
+              className={cn(
+                "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                BADGE_CLASS[label],
+              )}
+            >
+              {classificationTitle(label)}
+            </span>
+          ) : null}
+        </span>
         <span className="block truncate font-mono text-xs text-muted-foreground">{subtitle}</span>
+        {reason && !failed ? (
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">{reason}</span>
+        ) : null}
         {failed && asset.txError ? (
           <span className="mt-0.5 block text-xs text-destructive">{asset.txError}</span>
         ) : null}
