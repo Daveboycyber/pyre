@@ -1,17 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { CtaBanner } from "@/components/cta-banner";
+import { FaqSection } from "@/components/faq-section";
 import { FeatureGrid } from "@/components/feature-grid";
 import { HeroPreview } from "@/components/hero-preview";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { WalletDialog } from "@/components/wallet-dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
@@ -36,41 +31,6 @@ const FLOW = [
     n: "04",
     title: "Sign",
     body: "Each burn or revoke is its own transaction. You approve every line.",
-  },
-];
-
-const FAQS = [
-  {
-    q: "What is the flow?",
-    a: "Connect a wallet, wait for the scan, review the list, then sign each action. Preview the flow first if you want to see it without a wallet.",
-  },
-  {
-    q: "Will you burn my Stock Tokens?",
-    a: "No. Known Stock Tokens and stables are locked. Safe mode cannot select them. Review-all still cannot select them.",
-  },
-  {
-    q: "Is this custodial?",
-    a: "No. Pyre builds transactions; your wallet signs them. Private keys never leave the wallet.",
-  },
-  {
-    q: "What does Safe mode do?",
-    a: "It pre-selects unsolicited spam and leftover approvals. You can uncheck a line before you sign. It does not sell tokens.",
-  },
-  {
-    q: "What does Sweep do?",
-    a: "Sweep checks 1inch on Robinhood Chain for a real route to ETH. If the quote clears gas plus the batch fee, Pyre sells that spam and sends you the ETH minus a 1.25% cut. Tokens with no viable route stay on the burn path. Stock Tokens are never treated as spam.",
-  },
-  {
-    q: "What about leftover Stock Token dust?",
-    a: "Tiny Stock Token balances can be swapped when the quote clears. If it does not, Pyre says so and leaves them. Dust is never burned. A later OTC buyback desk is not live — it needs real dust volume and a legal review first.",
-  },
-  {
-    q: "How are fees charged?",
-    a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${formatFeeEth(PROTOCOL_FEE_WEI)} protocol fee, collected once before any burns run. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
-  },
-  {
-    q: "Are you affiliated with Robinhood?",
-    a: "No. Pyre is an independent interface for the public Robinhood Chain.",
   },
 ];
 
@@ -223,24 +183,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="faq" className="scroll-mt-20 border-t border-border">
-          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-            <div>
-              <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">FAQ</p>
-              <h2 className="mt-3 font-display text-3xl tracking-tight sm:text-4xl">
-                Straight answers.
-              </h2>
-            </div>
-            <Accordion type="single" collapsible className="w-full">
-              {FAQS.map((item, index) => (
-                <AccordionItem key={item.q} value={`faq-${index}`}>
-                  <AccordionTrigger>{item.q}</AccordionTrigger>
-                  <AccordionContent>{item.a}</AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
+        <FaqSection />
 
         <CtaBanner />
       </main>
