@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Unlink,
 } from "lucide-react";
+import { STOCK_LOGOS, type StockLogo } from "@/components/stock-logos";
 import { cn } from "@/lib/utils";
 
 type Feature = {
@@ -59,21 +60,37 @@ function BurnVisual() {
   );
 }
 
-function LockedVisual() {
+function StockChip({ logo, index }: { logo: StockLogo; index: number }) {
   return (
-    <div className="flex h-full flex-wrap content-center items-center justify-center gap-1.5 px-4">
-      {["AAPL", "AMZN", "NVDA", "USDG", "TSLA"].map((t, i) => (
-        <span
-          key={t}
-          className={cn(
-            chip,
-            "font-mono text-foreground transition-shadow duration-500 group-hover:shadow-[0_0_0_1px_rgb(204_255_0/0.35)]",
-          )}
-          style={{ transitionDelay: `${i * 60}ms` }}
-        >
-          <Lock className="size-3 text-primary" />
-          {t}
-        </span>
+    <span className={cn(chip, "shrink-0 gap-2 py-1 pr-2 pl-1 font-mono text-foreground")}>
+      <span
+        className="flex size-6 items-center justify-center rounded-full shadow-[0_0_0_1px_rgb(255_255_255/0.1)]"
+        style={{ background: logo.bg, color: logo.fg }}
+      >
+        <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
+          <path d={logo.d} />
+        </svg>
+      </span>
+      {logo.ticker}
+      <Lock
+        className="lock-click size-3 text-primary"
+        style={{ animationDelay: `${(index % 4) * 0.9}s` }}
+      />
+    </span>
+  );
+}
+
+function LockedVisual() {
+  const rows = [STOCK_LOGOS.slice(0, 4), STOCK_LOGOS.slice(4)];
+  return (
+    <div className="marquee-mask flex h-full flex-col justify-center gap-2.5 overflow-hidden">
+      {rows.map((row, r) => (
+        <div key={r} className={cn("marquee-track flex w-max gap-2", r === 1 && "marquee-reverse")}>
+          {/* Rendered twice so the -50% loop point is seamless. */}
+          {[...row, ...row].map((logo, i) => (
+            <StockChip key={`${logo.ticker}-${i}`} logo={logo} index={i + r} />
+          ))}
+        </div>
       ))}
     </div>
   );
