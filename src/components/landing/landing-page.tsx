@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { Play } from "lucide-react";
 import { CtaBanner } from "@/components/landing/cta-banner";
 import { FaqSection } from "@/components/landing/faq-section";
 import { FeatureGrid } from "@/components/landing/feature-grid";
@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { CtaLink } from "@/components/ui/cta-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
@@ -61,15 +61,16 @@ export function LandingPage() {
                 Safe mode cannot touch protected holdings.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Button asChild size="lg">
-                  <Link to="/clean">
-                    Open cleaner
-                    <ArrowRight />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link to="/clean">Preview the flow</Link>
-                </Button>
+                <CtaLink to="/clean" size="md">
+                  Open cleaner
+                </CtaLink>
+                <Link
+                  to="/clean"
+                  className="group inline-flex h-12 items-center gap-2 rounded-full px-5 text-[15px] font-medium text-foreground shadow-[var(--shadow-border)] transition-[background-color,box-shadow] duration-300 hover:bg-surface hover:shadow-[var(--shadow-border-hover)]"
+                >
+                  <Play className="size-3.5 fill-current text-primary transition-transform duration-300 group-hover:scale-110" />
+                  Preview the flow
+                </Link>
               </div>
             </div>
             <HeroPreview className="mx-auto w-full max-w-md lg:mr-0" />

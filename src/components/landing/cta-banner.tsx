@@ -1,5 +1,4 @@
-import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { CtaLink } from "@/components/ui/cta-link";
 
 export function CtaBanner() {
   return (
@@ -28,16 +27,7 @@ export function CtaBanner() {
             Review every line and sign only what you choose.
           </p>
           <div className="mt-10 flex justify-center">
-            <Link
-              to="/clean"
-              className="cta-button group relative inline-flex h-14 items-center gap-3 overflow-hidden rounded-full bg-primary pr-2 pl-7 text-base font-medium text-primary-foreground transition-[transform,box-shadow] duration-300 ease-[var(--ease-smooth-out)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.98]"
-            >
-              <span className="relative z-10">Open cleaner</span>
-              <span className="relative z-10 flex size-10 items-center justify-center overflow-hidden rounded-full bg-primary-foreground text-primary transition-transform duration-300 ease-[var(--ease-smooth-out)] group-hover:scale-105">
-                <ArrowRight className="size-4 transition-transform duration-300 ease-[var(--ease-smooth-out)] group-hover:translate-x-6" />
-                <ArrowRight className="absolute size-4 -translate-x-6 transition-transform duration-300 ease-[var(--ease-smooth-out)] group-hover:translate-x-0" />
-              </span>
-            </Link>
+            <CtaLink to="/clean">Open cleaner</CtaLink>
           </div>
         </div>
       </div>
