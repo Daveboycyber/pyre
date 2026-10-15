@@ -304,6 +304,18 @@
   }
 }
 
+.wallet-button {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.45),
+    0 8px 24px -10px rgb(204 255 0 / 0.55);
+}
+
+.wallet-button:hover {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.7),
+    0 12px 32px -10px rgb(204 255 0 / 0.75);
+}
+
 /* Toast countdown: shrinks over the toast's lifetime, pauses on hover like the timer. */
 @keyframes toast-countdown {
   from {

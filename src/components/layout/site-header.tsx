@@ -2,15 +2,14 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
+import { WalletButton } from "@/components/layout/wallet-button";
 import { Button } from "@/components/ui/button";
 import { NavItemLink } from "@/components/ui/nav-item-link";
 import { PRODUCT_NAV } from "@/lib/site-nav";
 import { cn } from "@/lib/utils";
-import { shortAddress, useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { connected, address, setOpen, disconnect, demo } = useWalletCleaner();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/75 backdrop-blur-xl backdrop-saturate-150">
@@ -30,21 +29,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {connected && address ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={disconnect}
-              className="hidden font-mono text-xs sm:inline-flex"
-            >
-              {demo ? "Demo · " : ""}
-              {shortAddress(address)}
-            </Button>
-          ) : (
-            <Button size="sm" onClick={() => setOpen(true)} className="hidden sm:inline-flex">
-              Connect wallet
-            </Button>
-          )}
+          <WalletButton className="hidden sm:inline-flex" />
           <Button
             variant="ghost"
             size="icon"
@@ -68,21 +53,10 @@ export function SiteHeader() {
               className="flex min-h-11 items-center text-sm text-foreground"
             />
           ))}
-          {connected && address ? (
-            <Button variant="outline" className="mt-2" onClick={disconnect}>
-              Disconnect {shortAddress(address)}
-            </Button>
-          ) : (
-            <Button
-              className="mt-2"
-              onClick={() => {
-                setMenuOpen(false);
-                setOpen(true);
-              }}
-            >
-              Connect wallet
-            </Button>
-          )}
+          <WalletButton
+            className="mt-2 w-full justify-center"
+            onAction={() => setMenuOpen(false)}
+          />
         </nav>
       </div>
     </header>
