@@ -5,23 +5,23 @@ import { cn } from "@/lib/utils";
 export type ToastAction = { label: string; onClick: () => void };
 
 export type PyreToastProps = {
-  tone: FeedbackTone;
-  title: string;
-  description?: string;
-  action?: ToastAction;
+  readonly tone: FeedbackTone;
+  readonly title: string;
+  readonly description?: string;
+  readonly action?: ToastAction;
   /** ms until auto-close; drives the countdown bar. Infinity hides it. */
-  duration: number;
-  onClose: () => void;
+  readonly duration: number;
+  readonly onClose: () => void;
 };
 
 /** Pyre-styled toast body rendered inside sonner's container. */
 export function PyreToast({ tone, title, description, action, duration, onClose }: PyreToastProps) {
   const { icon: Icon, tile, ring, bar, glow } = TONES[tone];
   return (
-    <div
-      role={tone === "error" ? "alert" : "status"}
+    <output
+      role={tone === "error" ? "alert" : undefined}
       className={cn(
-        "group pyre-toast relative w-[min(92vw,380px)] overflow-hidden rounded-2xl bg-[#202020]/95 p-3.5 pr-10 text-foreground backdrop-blur-xl",
+        "group pyre-toast relative block w-[min(92vw,380px)] overflow-hidden rounded-2xl bg-[#202020]/95 p-3.5 pr-10 text-foreground backdrop-blur-xl",
         "shadow-[0_24px_60px_-20px_rgb(0_0_0/0.9)]",
         ring,
       )}
@@ -76,6 +76,6 @@ export function PyreToast({ tone, title, description, action, duration, onClose 
           style={{ animationDuration: `${duration}ms` }}
         />
       ) : null}
-    </div>
+    </output>
   );
 }

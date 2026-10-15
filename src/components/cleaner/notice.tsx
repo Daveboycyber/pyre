@@ -36,7 +36,7 @@ export function Notice({
   return (
     <output
       role={tone === "error" ? "alert" : undefined}
-      className={cn("rounded-2xl p-4", ring, className)}
+      className={cn("block rounded-2xl p-4", ring, className)}
     >
       <div className="flex gap-3">
         <Icon className={cn("mt-0.5 size-5 shrink-0", iconClass)} />
