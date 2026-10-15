@@ -1,8 +1,12 @@
-import { Link } from "@tanstack/react-router";
 import { Logo } from "@/components/layout/logo";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { NavItemLink } from "@/components/ui/nav-item-link";
+import { LEGAL_NAV, PRODUCT_NAV, type NavItem } from "@/lib/site-nav";
 
-const linkClass =
-  "text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground";
+const COLUMNS: { title: string; items: NavItem[] }[] = [
+  { title: "Product", items: PRODUCT_NAV },
+  { title: "Legal", items: LEGAL_NAV },
+];
 
 export function SiteFooter() {
   return (
@@ -15,46 +19,21 @@ export function SiteFooter() {
             Tokens alone.
           </p>
         </div>
-        <nav aria-label="Product">
-          <p className="text-xs tracking-[0.18em] text-muted-foreground/70 uppercase">Product</p>
-          <ul className="mt-4 space-y-2.5">
-            <li>
-              <Link to="/clean" className={linkClass}>
-                Cleaner
-              </Link>
-            </li>
-            <li>
-              <a href="/#how" className={linkClass}>
-                How it works
-              </a>
-            </li>
-            <li>
-              <Link to="/fees" className={linkClass}>
-                Fees
-              </Link>
-            </li>
-            <li>
-              <a href="/#faq" className={linkClass}>
-                FAQ
-              </a>
-            </li>
-          </ul>
-        </nav>
-        <nav aria-label="Legal">
-          <p className="text-xs tracking-[0.18em] text-muted-foreground/70 uppercase">Legal</p>
-          <ul className="mt-4 space-y-2.5">
-            <li>
-              <Link to="/privacy" className={linkClass}>
-                Privacy Policy
-              </Link>
-            </li>
-            <li>
-              <Link to="/terms" className={linkClass}>
-                Terms of Use
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        {COLUMNS.map((column) => (
+          <nav key={column.title} aria-label={column.title}>
+            <Eyebrow className="text-muted-foreground/70">{column.title}</Eyebrow>
+            <ul className="mt-4 space-y-2.5">
+              {column.items.map((item) => (
+                <li key={item.label}>
+                  <NavItemLink
+                    item={item}
+                    className="text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+                  />
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       </div>
       <div className="mx-auto max-w-6xl border-t border-border px-5 py-6 sm:px-6">
         <p className="text-xs text-muted-foreground">
