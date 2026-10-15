@@ -1,126 +1,88 @@
-import { Link } from "@tanstack/react-router";
-import { ExternalLink } from "lucide-react";
+import { AddressCard } from "@/components/fees/address-card";
+import { CreditsSection } from "@/components/fees/credits-section";
+import { FeeExample } from "@/components/fees/fee-example";
+import { Guarantees } from "@/components/fees/guarantees";
+import { PricingCards } from "@/components/fees/pricing-cards";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { Button } from "@/components/ui/button";
+import { CtaLink } from "@/components/ui/cta-link";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { explorerAddressUrl } from "@/lib/web3/blockscout";
 import {
-  formatFeeEth,
-  PROTOCOL_FEE_WEI,
+  PYRE_BATCH_ADDRESS,
+  pyreBatchIsDeployed,
   TREASURY_ADDRESS,
   treasuryIsLive,
-  pyreBatchIsDeployed,
-  PYRE_BATCH_ADDRESS,
 } from "@/lib/web3/fees";
-import { SWEEP_CUT_BPS } from "@/lib/web3/sweep";
-
-const CUT_PCT = (Number(SWEEP_CUT_BPS) / 100).toFixed(2);
 
 export function FeesPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <SiteHeader />
-      <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 lg:py-20">
+      <main className="mx-auto flex max-w-5xl flex-col gap-16 px-5 py-14 sm:px-6 lg:py-20">
         <SectionHeading
           as="h1"
           eyebrow="Fees & treasury"
-          title="What Pyre charges"
-          description="Single burns and revokes stay free besides network gas. Batches and successful sweeps pay the protocol. Stock Tokens are never burned."
+          title="Simple, flat and on-chain"
+          description="Single burns and revokes are free besides network gas. A batch pays one flat fee, and a sweep keeps a small cut of the ETH it recovers. That is all."
         />
 
-        <section className="mt-12 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border text-xs tracking-wide text-muted-foreground uppercase">
-                <th className="py-3 pr-4 font-medium">Action</th>
-                <th className="py-3 pr-4 font-medium">What happens</th>
-                <th className="py-3 font-medium">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-border">
-                <td className="py-4 pr-4">One burn or revoke</td>
-                <td className="py-4 pr-4">Signed as a single transaction</td>
-                <td className="py-4">Network gas only</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-4 pr-4">Sweep (quoted spam)</td>
-                <td className="py-4 pr-4">
-                  Swap to ETH when the quote clears. {CUT_PCT}% of ETH received
-                  goes to treasury.
-                </td>
-                <td className="py-4">{CUT_PCT}% of ETH + gas</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-4 pr-4">Batch Clean (2+ lines)</td>
-                <td className="py-4 pr-4">
-                  Fee collected first, then each line. One failed line does not
-                  unwind the rest.
-                </td>
-                <td className="py-4">
-                  {formatFeeEth(PROTOCOL_FEE_WEI)} once + gas
-                </td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="py-4 pr-4">Stock Tokens / stables</td>
-                <td className="py-4 pr-4">
-                  Locked by address and ticker (registry loads at scan).
-                  Never selected for burn.
-                </td>
-                <td className="py-4">Not for sale here</td>
-              </tr>
-              <tr>
-                <td className="py-4 pr-4">Credits (v0)</td>
-                <td className="py-4 pr-4">
-                  Earn 1 credit when a clean recovers any ETH. Spend 1 credit to
-                  waive the next batch fee. Stored in this browser only.
-                </td>
-                <td className="py-4">Rebate · not transferable</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
+        <PricingCards />
 
-        <section className="mt-12 rounded-2xl bg-card p-6 shadow-[var(--shadow-border)] sm:p-8">
-          <h2 className="font-display text-2xl tracking-tight">Treasury</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Batch fees and the {CUT_PCT}% sweep cut land here. Public on
-            Robinhood Chain explorer.
-          </p>
-          <p className="mt-4 break-all font-mono text-sm">
-            {TREASURY_ADDRESS}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Button asChild variant="outline" size="sm">
-              <a
-                href={explorerAddressUrl(TREASURY_ADDRESS)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View on explorer
-                <ExternalLink className="size-3.5" />
-              </a>
-            </Button>
-            <span className="flex items-center text-xs text-muted-foreground">
-              {treasuryIsLive() ? "Live treasury" : "Placeholder — fees paused"}
-            </span>
+        <section className="flex flex-col gap-6">
+          <div>
+            <Eyebrow>How it adds up</Eyebrow>
+            <h2 className="mt-3 font-display text-3xl tracking-tight">Two quick examples</h2>
           </div>
-          <p className="mt-6 text-xs text-muted-foreground">
-            PyreBatch:{" "}
-            {pyreBatchIsDeployed()
-              ? PYRE_BATCH_ADDRESS
-              : "not deployed — fee is a direct ETH transfer to treasury"}
-          </p>
+          <FeeExample />
         </section>
 
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link to="/clean">Open cleaner</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/">Back home</Link>
-          </Button>
+        <section className="flex flex-col gap-6">
+          <div>
+            <Eyebrow>Our promise</Eyebrow>
+            <h2 className="mt-3 font-display text-3xl tracking-tight">
+              What you will never be charged for
+            </h2>
+          </div>
+          <Guarantees />
+        </section>
+
+        <CreditsSection />
+
+        <section className="flex flex-col gap-6">
+          <div>
+            <Eyebrow>Where fees go</Eyebrow>
+            <h2 className="mt-3 font-display text-3xl tracking-tight">Public by design</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <AddressCard
+              title="Treasury"
+              description="Receives batch fees and the sweep cut."
+              address={TREASURY_ADDRESS}
+              status={
+                treasuryIsLive()
+                  ? { label: "Live", live: true }
+                  : { label: "Placeholder · fees paused", live: false }
+              }
+            />
+            {pyreBatchIsDeployed() ? (
+              <AddressCard
+                title="PyreBatch contract"
+                description="Collects the batch fee and forwards it to the treasury in the same transaction."
+                address={PYRE_BATCH_ADDRESS}
+                status={{ label: "Source matches repo", live: true }}
+              />
+            ) : null}
+          </div>
+        </section>
+
+        <div className="flex flex-col items-start gap-4 border-t border-border pt-10 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-md text-sm text-muted-foreground">
+            You see the exact fee before you sign, and nothing moves until you approve it.
+          </p>
+          <CtaLink to="/clean" size="md">
+            Open cleaner
+          </CtaLink>
         </div>
       </main>
       <SiteFooter />
