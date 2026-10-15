@@ -23,7 +23,8 @@ export function SiteHeader() {
             <NavItemLink
               key={item.label}
               item={item}
-              className="text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+              className="relative text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+              activeClassName="!text-foreground after:absolute after:-bottom-2 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary"
             />
           ))}
         </nav>
@@ -51,6 +52,7 @@ export function SiteHeader() {
               item={item}
               onClick={() => setMenuOpen(false)}
               className="flex min-h-11 items-center text-sm text-foreground"
+              activeClassName="!text-primary"
             />
           ))}
           <WalletButton

@@ -1,4 +1,3 @@
-import { CleanerHeader } from "@/components/cleaner/cleaner-header";
 import { ConnectCard } from "@/components/cleaner/connect-card";
 import { DemoBanner } from "@/components/cleaner/demo-banner";
 import { LastRunNotice } from "@/components/cleaner/last-run-notice";
@@ -10,6 +9,7 @@ import { SigningPanel } from "@/components/cleaner/signing-panel";
 import { Stepper } from "@/components/cleaner/stepper";
 import { stepIndex } from "@/components/cleaner/steps";
 import { useCleanToasts } from "@/components/cleaner/use-clean-toasts";
+import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
 import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
@@ -31,7 +31,7 @@ export function CleanerPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <CleanerHeader />
+      <SiteHeader />
       <main className="mx-auto flex max-w-lg flex-col gap-5 px-5 py-6">
         <Stepper current={stepIndex(status, connected)} />
         {demo ? <DemoBanner /> : null}
