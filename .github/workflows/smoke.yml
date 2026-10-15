@@ -1,0 +1,41 @@
+name: Production smoke test
+
+# Vercel deploys main to production through its GitHub integration.
+# When that deployment succeeds, check the live site actually works.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Production'
+    name: Smoke · production
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+    steps:
+      - name: Pages respond
+        run: |
+          set -euo pipefail
+          echo "Checking $BASE_URL"
+          for path in / /clean /fees /privacy /terms /stock-tokens.json; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 5 "$BASE_URL$path")
+            echo "$path -> $code"
+            [ "$code" = "200" ] || { echo "::error::$path returned $code"; exit 1; }
+          done
+
+      - name: Stock Token API
+        # Upstream (api.robinhood.com) outages should not fail the deploy check,
+        # but they should be visible. The app falls back to /stock-tokens.json.
+        run: |
+          body=$(curl -s --retry 3 --retry-delay 5 "$BASE_URL/api/stock-tokens" || true)
+          count=$(echo "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s);console.log(Array.isArray(a)?a.length:0)}catch{console.log(0)}})')
+          echo "Stock Tokens returned: $count"
+          if [ "$count" -eq 0 ]; then
+            echo "::warning::/api/stock-tokens returned no tokens; the app will use the snapshot fallback"
+          fi
