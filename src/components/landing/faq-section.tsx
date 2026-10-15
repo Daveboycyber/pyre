@@ -35,6 +35,22 @@ const FAQS: { q: string; a: ReactNode }[] = [
     a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${formatFeeEth(PROTOCOL_FEE_WEI)} protocol fee, collected once before any burns run. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
   },
   {
+    q: "What are credits?",
+    a: (
+      <>
+        Credits are a small rebate that waives your batch fee. You earn 1 when a clean recovers ETH
+        through a sweep or dust swap, and 1 if you paid the batch fee but every line failed. Your
+        next batch clean spends 1 automatically and the fee is waived. Credits are saved per wallet
+        in your browser, so clearing site data resets them. They are not a token and cannot be
+        transferred or cashed out. Demo runs never use them. See the{" "}
+        <Link to="/fees" hash="credits" className="text-link">
+          Fees page
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
     q: "What data does Pyre keep?",
     a: (
       <>
