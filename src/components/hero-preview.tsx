@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Lock } from "lucide-react";
+import { STOCK_LOGOS } from "@/components/stock-logos";
 import { cn } from "@/lib/utils";
 
 type Mark = "usdg" | "weth" | "spam" | "nft" | "stock";
@@ -109,18 +110,15 @@ function TokenMark({ mark, symbol }: { mark: Mark; symbol: string }) {
         </span>
       );
     case "spam":
+      // Unknown token: no verified logo, so show a question mark.
       return (
-        <span className={cn(base, "bg-destructive/15 text-destructive")}>
-          <svg
-            viewBox="0 0 16 16"
-            className="size-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-          >
-            <path d="M8 4.5v4.2M8 11.2v.1" />
-          </svg>
+        <span
+          className={cn(
+            base,
+            "border border-dashed border-destructive/50 bg-destructive/10 text-[12px] font-semibold text-destructive",
+          )}
+        >
+          ?
         </span>
       );
     case "nft":
@@ -134,15 +132,20 @@ function TokenMark({ mark, symbol }: { mark: Mark; symbol: string }) {
           ?
         </span>
       );
-    case "stock":
+    case "stock": {
+      const logo = STOCK_LOGOS.find((l) => l.ticker === symbol);
       return (
         <span
-          className={cn(
-            base,
-            "bg-[#262626] font-mono text-[10px] font-semibold text-foreground shadow-[var(--shadow-border)]",
-          )}
+          className={cn(base, "shadow-[0_0_0_1px_rgb(255_255_255/0.1)]")}
+          style={logo ? { background: logo.bg, color: logo.fg } : undefined}
         >
-          {symbol.slice(0, 2)}
+          {logo ? (
+            <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
+              <path d={logo.d} />
+            </svg>
+          ) : (
+            <span className="font-mono text-[10px] font-semibold">{symbol.slice(0, 2)}</span>
+          )}
           <span className="absolute -right-0.5 -bottom-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-[#151515]">
             <svg viewBox="0 0 8 8" className="size-1.5" fill="currentColor">
               <path d="M1 6 3 3.5 4.5 5 7 2v4H1Z" />
@@ -150,6 +153,7 @@ function TokenMark({ mark, symbol }: { mark: Mark; symbol: string }) {
           </span>
         </span>
       );
+    }
   }
 }
 
