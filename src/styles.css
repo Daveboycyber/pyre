@@ -132,63 +132,24 @@
   animation: lime-pulse 1.4s var(--ease-out) infinite;
 }
 
-@keyframes pop {
-  0% {
-    transform: scale(0.4);
+@keyframes pop-in {
+  from {
     opacity: 0;
+    transform: scale(0.85);
   }
-  70% {
-    transform: scale(1.12);
+  to {
     opacity: 1;
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes scan-sweep {
-  0% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(320px);
-    opacity: 0;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
+    transform: none;
   }
 }
 
 .hero-preview {
-  animation:
-    rise 700ms var(--ease-smooth-out) 150ms both,
-    float 7s ease-in-out 1s infinite;
+  animation: rise 700ms var(--ease-smooth-out) 150ms both;
 }
 
+/* backwards, not both: a held end state would pin opacity and block the dim. */
 .preview-row {
-  animation: rise 500ms var(--ease-smooth-out) both;
-}
-
-.preview-check {
-  animation: pop 380ms var(--ease-smooth-out) both;
-}
-
-.preview-scan {
-  animation: scan-sweep 3.2s var(--ease-out) 600ms infinite;
+  animation: rise 500ms var(--ease-smooth-out) backwards;
 }
 
 .hero-glow {
@@ -230,14 +191,8 @@
   .lime-pulse,
   .hero-preview,
   .preview-row,
-  .preview-check,
-  .preview-scan,
   .on-scroll {
     animation: none !important;
-  }
-
-  .preview-scan {
-    display: none;
   }
 
   .lift,
