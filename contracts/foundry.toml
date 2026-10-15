@@ -1,0 +1,11 @@
+# Foundry project for PyreBatch. Run from this folder: `forge test`.
+# Compiler settings match the live deployment so bytecode stays reproducible.
+[profile.default]
+src = "."
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+solc = "0.8.37"
+optimizer = false
+remappings = ["forge-std/=lib/forge-std/src/"]

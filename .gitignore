@@ -17,3 +17,8 @@ AGENTS.project.md
 *.log
 .DS_Store
 .cache
+
+# Foundry (contracts/)
+contracts/out
+contracts/cache
+contracts/lib
