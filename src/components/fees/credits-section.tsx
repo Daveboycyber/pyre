@@ -47,12 +47,9 @@ export function CreditsSection() {
         ))}
       </ol>
 
-      <ul className="mt-6 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-        <li>• Saved per wallet in this browser. Clearing site data resets them.</li>
-        <li>• Not a token, not transferable and not redeemable for cash.</li>
-        <li>• Single free actions never use a credit.</li>
-        <li>• Demo runs never earn or spend credits.</li>
-      </ul>
+      <p className="mt-6 text-xs text-muted-foreground">
+        Stored in this browser · Not a token · Not used in demo
+      </p>
     </section>
   );
 }
