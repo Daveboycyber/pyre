@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Unlink,
 } from "lucide-react";
-import { STOCK_LOGOS, type StockLogo } from "@/components/stock-logos";
+import { STOCK_LOGOS, type StockLogo } from "@/lib/brand/stock-logos";
 import { cn } from "@/lib/utils";
 
 type Feature = {

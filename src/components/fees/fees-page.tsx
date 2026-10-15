@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
 import { explorerAddressUrl } from "@/lib/web3/blockscout";
 import {

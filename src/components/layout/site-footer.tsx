@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/layout/logo";
 
 const linkClass =
   "text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground";

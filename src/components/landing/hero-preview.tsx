@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Lock } from "lucide-react";
-import { STOCK_LOGOS } from "@/components/stock-logos";
+import { STOCK_LOGOS } from "@/lib/brand/stock-logos";
 import { cn } from "@/lib/utils";
 
 type Mark = "usdg" | "weth" | "spam" | "nft" | "stock";

@@ -13,9 +13,9 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
-import { WalletDialog } from "@/components/wallet-dialog";
+import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { cn } from "@/lib/utils";
 import { explorerTxUrl } from "@/lib/web3/blockscout";
 import { formatFeeEth, PROTOCOL_FEE_ID, treasuryIsLive } from "@/lib/web3/fees";

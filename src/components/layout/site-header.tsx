@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { shortAddress, useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
