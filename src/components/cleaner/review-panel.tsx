@@ -1,5 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
+import { confirmDialog } from "@/lib/dialogs";
+import { formatFeeEth } from "@/lib/web3/fees";
+import { notify } from "@/lib/notify";
 import { AssetGroup } from "@/components/cleaner/asset-group";
 import { AssetRow } from "@/components/cleaner/asset-row";
 import { ModeTabs } from "@/components/cleaner/mode-tabs";
@@ -171,7 +173,7 @@ export function ReviewPanel() {
   const hideAsset = (id: string) => {
     const name = nameOf(id);
     dismiss(id);
-    toast.success(`${name} hidden`, {
+    notify.success(`${name} hidden`, {
       description: "It will stay out of future scans.",
       action: { label: "Undo", onClick: () => restoreDismissed(id) },
     });
@@ -179,10 +181,33 @@ export function ReviewPanel() {
   const restoreAsset = (id: string) => {
     const name = nameOf(id);
     restoreDismissed(id);
-    toast.success(`${name} restored`, { description: "Rescanning so it shows up again." });
+    notify.success(`${name} restored`, { description: "Rescanning so it shows up again." });
   };
   const isEmpty = reviewable.length + dust.length + locked.length + dismissedAssets.length === 0;
   const willWaiveFee = summary.feeWei > 0n && credits >= 1;
+
+  // Burns cannot be undone, so every run starts from an explicit confirmation.
+  const confirmAndSign = async () => {
+    const n = summary.actions;
+    let fee = "Free";
+    if (willWaiveFee) fee = "Waived (1 credit)";
+    else if (summary.feeWei > 0n) fee = formatFeeEth(summary.feeWei);
+    const ok = await confirmDialog({
+      tone: "warning",
+      title: `Sign ${n} action${n === 1 ? "" : "s"}?`,
+      description: demo
+        ? "Demo run. Nothing is signed or sent."
+        : "Burns and revokes cannot be undone. Your wallet will ask you to approve each line.",
+      details: [
+        { label: "Mode", value: mode[0].toUpperCase() + mode.slice(1) },
+        { label: "Actions", value: String(n) },
+        { label: "Batch fee", value: fee },
+      ],
+      confirmLabel: "Start signing",
+      cancelLabel: "Not yet",
+    });
+    if (ok) void clean();
+  };
 
   return (
     <section className="flex flex-col gap-4">
@@ -220,7 +245,7 @@ export function ReviewPanel() {
         actions={summary.actions}
         feeWei={summary.feeWei}
         waived={willWaiveFee}
-        onSign={() => void clean()}
+        onSign={() => void confirmAndSign()}
       />
     </section>
   );

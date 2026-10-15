@@ -9,6 +9,7 @@ import { ScanningCard } from "@/components/cleaner/scanning-card";
 import { SigningPanel } from "@/components/cleaner/signing-panel";
 import { Stepper } from "@/components/cleaner/stepper";
 import { stepIndex } from "@/components/cleaner/steps";
+import { useCleanToasts } from "@/components/cleaner/use-clean-toasts";
 import { Button } from "@/components/ui/button";
 import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
@@ -26,6 +27,7 @@ export function CleanerPage() {
     runScan,
     dismissPreviousClean,
   } = useWalletCleaner();
+  useCleanToasts(lastClean, demo);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">

@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import {
   createContext,
   createElement,
@@ -23,6 +22,8 @@ import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
 import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
 import { clearLastClean, loadLastClean, saveLastClean, type SavedClean } from "./last-clean.ts";
 import { DEMO_ADDRESS, DEMO_FAILURES } from "./demo-assets.ts";
+import { alertDialog } from "../dialogs.ts";
+import { notify } from "../notify.ts";
 import { batchFeeToSend, buildFeeTx } from "./batch.ts";
 import { assertReceiptSuccess } from "./receipt.ts";
 import {
@@ -183,7 +184,7 @@ function useWalletCleanerState() {
         await disconnectAsync();
       } catch (err) {
         console.error("[pyre] disconnect failed", err);
-        toast.error("Disconnected here, but the wallet did not confirm.", {
+        notify.error("Disconnected here, but the wallet did not confirm.", {
           description: "You may also need to disconnect Pyre inside your wallet app.",
         });
       }
@@ -497,6 +498,11 @@ function useWalletCleanerState() {
           },
       );
       setStatus("done");
+      void alertDialog({
+        tone: "error",
+        title: "Pyre stopped mid-clean",
+        description: `Something unexpected happened, so no more lines were sent. Check your wallet activity before trying again. (${reason})`,
+      });
     }
   }, [runClean]);
 
