@@ -17,6 +17,7 @@ import {
 } from "@/lib/web3/mobile-wallets";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 import { walletConnectEnabled } from "@/lib/web3/config";
+import { connectErrorMessage } from "@/lib/web3/tx-error";
 
 function walletNameKey(name: string) {
   return name.replace(/\s+wallet$/i, "").trim().toLowerCase();
@@ -105,12 +106,8 @@ export function WalletDialog() {
     try {
       await connect(connector.uid);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Could not connect";
-      setError(
-        /reject|denied|cancel/i.test(message)
-          ? "Connection cancelled in the wallet."
-          : message,
-      );
+      console.error("[pyre] wallet connect failed", err);
+      setError(connectErrorMessage(err));
     } finally {
       setPendingId(null);
     }
