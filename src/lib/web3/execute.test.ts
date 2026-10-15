@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { actionErrorMessage } from "./tx-error.ts";
+import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
 import { SimulationFailed } from "./execute.ts";
 
 test("maps wallet rejection", () => {
@@ -22,4 +22,12 @@ test("SimulationFailed is identifiable", () => {
   assert.equal(err.name, "SimulationFailed");
   assert.match(err.message, /No burn path/);
   assert.match(actionErrorMessage(err), /No burn path|boom|Simulation/i);
+});
+
+test("scan errors read as plain language", () => {
+  assert.match(scanErrorMessage(new Error("Failed to fetch")), /block explorer/);
+  assert.match(scanErrorMessage(new Error("HTTP 503")), /block explorer/);
+  assert.match(scanErrorMessage(new Error("User rejected the request.")), /Robinhood Chain/);
+  assert.equal(scanErrorMessage(new Error("boom")), "boom");
+  assert.match(scanErrorMessage(undefined), /did not finish/);
 });

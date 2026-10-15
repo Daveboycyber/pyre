@@ -18,3 +18,15 @@ export function actionErrorMessage(err: unknown): string {
   }
   return text.replace(/^execution reverted(?::\s*)?/i, "Token rejected the burn");
 }
+
+/** Readable reason for a failed wallet scan. */
+export function scanErrorMessage(err: unknown): string {
+  const text = err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  if (/user rejected|denied|rejected the request/i.test(text)) {
+    return "Switch your wallet to Robinhood Chain to scan it.";
+  }
+  if (/failed to fetch|network ?error|timeout|timed out|load failed|429|5\d\d/i.test(text)) {
+    return "Could not reach the block explorer. Check your connection and try again.";
+  }
+  return text || "The scan did not finish. Try again.";
+}
