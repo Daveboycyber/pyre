@@ -172,6 +172,23 @@
     0 18px 40px -18px rgb(204 255 0 / 0.18);
 }
 
+.feature-stage {
+  background:
+    radial-gradient(70% 90% at 50% 100%, rgb(204 255 0 / 0.07), transparent 70%),
+    radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px) 0 0 / 14px 14px,
+    rgb(0 0 0 / 0.18);
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.feature-dash {
+  animation: dash-flow 900ms linear infinite;
+}
+
 /* Fade sections in as they scroll into view, where the browser supports it. */
 @supports (animation-timeline: view()) {
   .on-scroll {
@@ -191,6 +208,7 @@
   .lime-pulse,
   .hero-preview,
   .preview-row,
+  .feature-dash,
   .on-scroll {
     animation: none !important;
   }

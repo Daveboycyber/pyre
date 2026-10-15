@@ -1,14 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Flame,
-  KeyRound,
-  Layers,
-  Lock,
-  ScanSearch,
-  Shield,
-  Wallet,
-} from "lucide-react";
+import { ArrowRight, ScanSearch } from "lucide-react";
+import { FeatureGrid } from "@/components/feature-grid";
 import { HeroPreview } from "@/components/hero-preview";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -44,39 +36,6 @@ const FLOW = [
     n: "04",
     title: "Sign",
     body: "Each burn or revoke is its own transaction. You approve every line.",
-  },
-];
-
-const FEATURES = [
-  {
-    icon: Wallet,
-    title: "Burn the spam",
-    body: "Memecoin airdrops, fake tickers, and bait NFTs leave the wallet. Real burn when the token supports it; otherwise a dead-address send.",
-  },
-  {
-    icon: Shield,
-    title: "Stock Tokens stay locked",
-    body: "Known RWAs and majors cannot be selected. Safe mode will not burn a holding you meant to keep.",
-  },
-  {
-    icon: KeyRound,
-    title: "Non-custodial",
-    body: "Pyre never sees a private key. Every action is a transaction you sign.",
-  },
-  {
-    icon: Lock,
-    title: "Revoke leftover approvals",
-    body: "Unlimited allowances on Permit2 and known spenders get set back to zero.",
-  },
-  {
-    icon: Flame,
-    title: "Review before you sign",
-    body: "The cleaner is a four-step flow, not a single hidden batch. You see the list, then sign line by line.",
-  },
-  {
-    icon: Layers,
-    title: "Built for this chain",
-    body: "Robinhood Chain is an Arbitrum L2. Gas is ETH. Pyre talks ERC-20, ERC-721, and allowances.",
   },
 ];
 
@@ -211,22 +170,7 @@ export function LandingPage() {
             <h2 className="on-scroll mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
               Built to clean a wallet without drama.
             </h2>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map((feature) => (
-                <article
-                  key={feature.title}
-                  className="lift on-scroll rounded-2xl bg-card p-6 shadow-[var(--shadow-border)]"
-                >
-                  <span className="flex size-10 items-center justify-center rounded-sm bg-background text-primary shadow-[var(--shadow-border)]">
-                    <feature.icon className="size-4" />
-                  </span>
-                  <h3 className="mt-5 text-base font-medium">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {feature.body}
-                  </p>
-                </article>
-              ))}
-            </div>
+            <FeatureGrid />
           </div>
         </section>
 
