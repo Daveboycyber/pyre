@@ -8,8 +8,8 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <Logo />
           <p className="mt-3 text-sm text-muted-foreground">
-            Non-custodial Robinhood Chain wallet cleaner. Burn spam, revoke
-            approvals, leave Stock Tokens alone.
+            Non-custodial Robinhood Chain wallet cleaner. Burn spam, revoke approvals, leave Stock
+            Tokens alone.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
@@ -39,11 +39,25 @@ export function SiteFooter() {
           </a>
         </nav>
       </div>
-      <div className="mx-auto max-w-6xl border-t border-border px-5 py-6 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 border-t border-border px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="text-xs text-muted-foreground">
-          Pyre is not affiliated with Robinhood Markets, Inc. Review every
-          transaction before you sign. Burns cannot be undone.
+          Pyre is not affiliated with Robinhood Markets, Inc. Review every transaction before you
+          sign. Burns cannot be undone.
         </p>
+        <nav className="flex shrink-0 gap-5" aria-label="Legal">
+          <Link
+            to="/privacy"
+            className="text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          >
+            Privacy
+          </Link>
+          <Link
+            to="/terms"
+            className="text-xs text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          >
+            Terms
+          </Link>
+        </nav>
       </div>
     </footer>
   );
