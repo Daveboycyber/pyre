@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import {
   createContext,
   createElement,
@@ -20,6 +21,7 @@ import { robinhoodChain } from "./chain.ts";
 import { ensureStockRegistry } from "./stock-tokens.ts";
 import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
 import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
+import { clearLastClean, loadLastClean, saveLastClean, type SavedClean } from "./last-clean.ts";
 import { DEMO_ADDRESS, DEMO_FAILURES } from "./demo-assets.ts";
 import { batchFeeToSend, buildFeeTx } from "./batch.ts";
 import { assertReceiptSuccess } from "./receipt.ts";
@@ -177,7 +179,14 @@ function useWalletCleanerState() {
 
   const disconnect = useCallback(async () => {
     if (!demo) {
-      await disconnectAsync();
+      try {
+        await disconnectAsync();
+      } catch (err) {
+        console.error("[pyre] disconnect failed", err);
+        toast.error("Disconnected here, but the wallet did not confirm.", {
+          description: "You may also need to disconnect Pyre inside your wallet app.",
+        });
+      }
     }
     setDemo(false);
     clearedIds.current.clear();
@@ -204,7 +213,7 @@ function useWalletCleanerState() {
     );
   }, []);
 
-  const clean = useCallback(async () => {
+  const runClean = useCallback(async () => {
     const toProcess = assets.filter(
       (a) => a.selected && (!a.protected || (a.dust && a.sweepable)),
     );
@@ -454,6 +463,43 @@ function useWalletCleanerState() {
     setStatus("done");
   }, [assets, walletClient, address, publicClient, demo, mode, ensureRobinhood]);
 
+  /**
+   * Every step inside runClean handles its own failure. This is the backstop
+   * for anything unexpected, so the UI can never stay stuck on "signing".
+   */
+  const clean = useCallback(async () => {
+    try {
+      await runClean();
+    } catch (err) {
+      console.error("[pyre] clean crashed", err);
+      const reason = actionErrorMessage(err);
+      setCurrentId(null);
+      setFeeStatus((s) => (s === "pending" ? "failed" : s));
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.txStatus === "pending" ? { ...a, txStatus: "failed", txError: reason } : a,
+        ),
+      );
+      setLastClean(
+        (prev) =>
+          prev ?? {
+            tokens: 0,
+            nfts: 0,
+            approvals: 0,
+            swept: 0,
+            dustSwaps: 0,
+            failed: 1,
+            feeWei: 0n,
+            feePaid: false,
+            recoveredWei: 0n,
+            cutWei: 0n,
+            error: `Something went wrong mid-clean, so Pyre stopped. Check your wallet activity before trying again. (${reason})`,
+          },
+      );
+      setStatus("done");
+    }
+  }, [runClean]);
+
   /** Back to review with only the lines that failed, ready to sign again. */
   const retryFailed = useCallback(() => {
     setAssets((prev) =>
@@ -469,6 +515,27 @@ function useWalletCleanerState() {
     setCurrentId(null);
     setFeeStatus("idle");
     setStatus("ready");
+  }, []);
+
+  const [previousClean, setPreviousClean] = useState<SavedClean | null>(null);
+
+  useEffect(() => {
+    setPreviousClean(demo ? null : loadLastClean(address));
+  }, [address, demo]);
+
+  // Save each finished real clean so a reload can still show what happened.
+  useEffect(() => {
+    if (demo || status !== "done" || !lastClean || !address) return;
+    const failedLines = assets
+      .filter((a) => a.txStatus === "failed")
+      .map((a) => ({ id: a.id, name: a.name, symbol: a.symbol, reason: a.txError }));
+    saveLastClean(address, lastClean, failedLines);
+    setPreviousClean(loadLastClean(address));
+  }, [demo, status, lastClean, address, assets]);
+
+  const dismissPreviousClean = useCallback(() => {
+    clearLastClean();
+    setPreviousClean(null);
   }, []);
 
   const wasConnected = useRef(false);
@@ -540,6 +607,8 @@ function useWalletCleanerState() {
     clean,
     retryFailed,
     runScan,
+    previousClean,
+    dismissPreviousClean,
   };
 }
 
