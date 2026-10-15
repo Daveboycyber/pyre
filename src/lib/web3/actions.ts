@@ -1,5 +1,5 @@
 import { encodeFunctionData, type Abi } from "viem";
-import { DEAD_ADDRESS } from "./chain";
+import { DEAD_ADDRESS } from "./chain.ts";
 
 // Minimal ABIs — just the functions Pyre needs to call.
 export const erc20Abi = [

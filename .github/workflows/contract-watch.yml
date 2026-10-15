@@ -1,0 +1,35 @@
+name: Contract watch
+
+# Confirms the live PyreBatch still matches contracts/PyreBatch.sol and its
+# settings are sane (fee under the cap, treasury set, no surprise ownership
+# transfer). Runs weekly, on contract changes to main, and on demand.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  push:
+    branches: [main]
+    paths: ["contracts/**"]
+  workflow_dispatch:
+    inputs:
+      address:
+        description: PyreBatch address to check
+        required: false
+        default: "0xcB157e4D7035F9a38b9e0B92b89E544e378c1490"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Live bytecode and settings
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Verify deployment
+        run: contracts/script/verify-deployment.sh "${{ inputs.address || '0xcB157e4D7035F9a38b9e0B92b89E544e378c1490' }}"

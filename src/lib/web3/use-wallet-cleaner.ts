@@ -16,45 +16,48 @@ import {
   useSwitchChain,
   useWalletClient,
 } from "wagmi";
-import { robinhoodChain } from "./chain";
-import { ensureStockRegistry } from "./stock-tokens";
-import { disposeErc20, disposeErc721, revokeApproval } from "./execute";
-import { actionErrorMessage } from "./tx-error";
-import { DEMO_ADDRESS } from "./demo-assets";
-import { batchFeeToSend, buildFeeTx } from "./batch";
-import { assertReceiptSuccess } from "./receipt";
+import { robinhoodChain } from "./chain.ts";
+import { ensureStockRegistry } from "./stock-tokens.ts";
+import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
+import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
+import { clearLastClean, loadLastClean, saveLastClean, type SavedClean } from "./last-clean.ts";
+import { DEMO_ADDRESS, DEMO_FAILURES } from "./demo-assets.ts";
+import { alertDialog } from "../dialogs.ts";
+import { notify } from "../notify.ts";
+import { batchFeeToSend, buildFeeTx } from "./batch.ts";
+import { assertReceiptSuccess } from "./receipt.ts";
 import {
   addCredits,
   creditsEarnedFromClean,
   creditsForFeeWithoutSuccess,
   getCredits,
   spendCredit,
-} from "./credits";
+} from "./credits.ts";
 import {
   dismissAsset,
   getDismissedIds,
   pruneDismissedToHeld,
   undismissAsset,
-} from "./dismissed";
-import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees";
-import { attachLiveQuotes } from "./quotes";
+} from "./dismissed.ts";
+import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees.ts";
+import { attachLiveQuotes } from "./quotes.ts";
 import {
   selectedAction,
   sweepCutWei,
   sweepNetWei,
   withSweepFlags,
-} from "./sweep";
-import { executeSweepSwap } from "./uniswap";
-import type { LastClean, Mode, ScanStatus, WalletAsset } from "./types";
+} from "./sweep.ts";
+import { executeSweepSwap } from "./uniswap.ts";
+import type { LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
 import {
   applyMode,
   buildAssetsForAddress,
   cloneDemo,
   sleep,
-} from "./use-wallet-cleaner-lib";
+} from "./use-wallet-cleaner-lib.ts";
 
-export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types";
-export { estimate, shortAddress } from "./use-wallet-cleaner-lib";
+export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
+export { estimate, shortAddress } from "./use-wallet-cleaner-lib.ts";
 
 function useWalletCleanerState() {
   const { address: wagmiAddress, isConnected, chainId } = useAccount();
@@ -140,7 +143,7 @@ function useWalletCleanerState() {
       setStatus("ready");
     } catch (err) {
       console.error("[pyre] scan failed", err);
-      setScanError(err instanceof Error ? err.message : "Scan failed");
+      setScanError(scanErrorMessage(err));
       setStatus("idle");
     }
   }, [address, publicClient, demo, ensureRobinhood]);
@@ -177,7 +180,14 @@ function useWalletCleanerState() {
 
   const disconnect = useCallback(async () => {
     if (!demo) {
-      await disconnectAsync();
+      try {
+        await disconnectAsync();
+      } catch (err) {
+        console.error("[pyre] disconnect failed", err);
+        notify.error("Disconnected here, but the wallet did not confirm.", {
+          description: "You may also need to disconnect Pyre inside your wallet app.",
+        });
+      }
     }
     setDemo(false);
     clearedIds.current.clear();
@@ -204,23 +214,21 @@ function useWalletCleanerState() {
     );
   }, []);
 
-  const clean = useCallback(async () => {
+  const runClean = useCallback(async () => {
     const toProcess = assets.filter(
       (a) => a.selected && (!a.protected || (a.dust && a.sweepable)),
     );
     if (toProcess.length === 0) return;
     const baseFeeWei = protocolFeeWei(toProcess.length);
+    // Credits are a real-wallet ledger; the demo always shows the full fee.
     const canWaive =
-      baseFeeWei > 0n &&
-      (demo || (Boolean(address) && getCredits(address) >= 1));
+      baseFeeWei > 0n && !demo && Boolean(address) && getCredits(address) >= 1;
     let feeWaived = false;
     let feeWei = baseFeeWei;
-    if (canWaive) {
-      if (demo || spendCredit(address)) {
-        feeWaived = true;
-        feeWei = 0n;
-        setCredits(getCredits(address));
-      }
+    if (canWaive && spendCredit(address)) {
+      feeWaived = true;
+      feeWei = 0n;
+      setCredits(getCredits(address));
     }
 
     setStatus("signing");
@@ -312,6 +320,11 @@ function useWalletCleanerState() {
       const action = selectedAction(asset, mode);
 
       try {
+        const demoFailure = demo ? DEMO_FAILURES[asset.id] : undefined;
+        if (demoFailure) {
+          await sleep(700);
+          throw new Error(demoFailure);
+        }
         if (action === "dust-swap" || action === "sweep") {
           if (demo) {
             await sleep(700);
@@ -451,6 +464,86 @@ function useWalletCleanerState() {
     setStatus("done");
   }, [assets, walletClient, address, publicClient, demo, mode, ensureRobinhood]);
 
+  /**
+   * Every step inside runClean handles its own failure. This is the backstop
+   * for anything unexpected, so the UI can never stay stuck on "signing".
+   */
+  const clean = useCallback(async () => {
+    try {
+      await runClean();
+    } catch (err) {
+      console.error("[pyre] clean crashed", err);
+      const reason = actionErrorMessage(err);
+      setCurrentId(null);
+      setFeeStatus((s) => (s === "pending" ? "failed" : s));
+      setAssets((prev) =>
+        prev.map((a) =>
+          a.txStatus === "pending" ? { ...a, txStatus: "failed", txError: reason } : a,
+        ),
+      );
+      setLastClean(
+        (prev) =>
+          prev ?? {
+            tokens: 0,
+            nfts: 0,
+            approvals: 0,
+            swept: 0,
+            dustSwaps: 0,
+            failed: 1,
+            feeWei: 0n,
+            feePaid: false,
+            recoveredWei: 0n,
+            cutWei: 0n,
+            error: `Something went wrong mid-clean, so Pyre stopped. Check your wallet activity before trying again. (${reason})`,
+          },
+      );
+      setStatus("done");
+      void alertDialog({
+        tone: "error",
+        title: "Pyre stopped mid-clean",
+        description: `Something unexpected happened, so no more lines were sent. Check your wallet activity before trying again. (${reason})`,
+      });
+    }
+  }, [runClean]);
+
+  /** Back to review with only the lines that failed, ready to sign again. */
+  const retryFailed = useCallback(() => {
+    setAssets((prev) =>
+      prev
+        .filter((a) => a.txStatus !== "done")
+        .map((a) =>
+          a.txStatus === "failed"
+            ? { ...a, selected: true, txStatus: undefined, txError: undefined }
+            : { ...a, selected: false },
+        ),
+    );
+    setLastClean(null);
+    setCurrentId(null);
+    setFeeStatus("idle");
+    setStatus("ready");
+  }, []);
+
+  const [previousClean, setPreviousClean] = useState<SavedClean | null>(null);
+
+  useEffect(() => {
+    setPreviousClean(demo ? null : loadLastClean(address));
+  }, [address, demo]);
+
+  // Save each finished real clean so a reload can still show what happened.
+  useEffect(() => {
+    if (demo || status !== "done" || !lastClean || !address) return;
+    const failedLines = assets
+      .filter((a) => a.txStatus === "failed")
+      .map((a) => ({ id: a.id, name: a.name, symbol: a.symbol, reason: a.txError }));
+    saveLastClean(address, lastClean, failedLines);
+    setPreviousClean(loadLastClean(address));
+  }, [demo, status, lastClean, address, assets]);
+
+  const dismissPreviousClean = useCallback(() => {
+    clearLastClean();
+    setPreviousClean(null);
+  }, []);
+
   const wasConnected = useRef(false);
   useEffect(() => {
     if (demo) return;
@@ -518,7 +611,10 @@ function useWalletCleanerState() {
     undismiss,
     toggleShowDismissed,
     clean,
+    retryFailed,
     runScan,
+    previousClean,
+    dismissPreviousClean,
   };
 }
 

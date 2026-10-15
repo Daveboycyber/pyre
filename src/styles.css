@@ -32,6 +32,7 @@
 
   --shadow-border: 0 0 0 1px rgb(204 255 0 / 0.14);
   --shadow-border-hover: 0 0 0 1px rgb(204 255 0 / 0.32);
+  --shadow-hairline: 0 0 0 1px rgb(255 255 255 / 0.08);
 
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -71,6 +72,18 @@
   ::selection {
     background: var(--color-primary);
     color: var(--color-primary-foreground);
+  }
+}
+
+/* Inline text link inside body copy. */
+@utility text-link {
+  color: var(--color-foreground);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--color-primary);
   }
 }
 
@@ -132,6 +145,204 @@
   animation: lime-pulse 1.4s var(--ease-out) infinite;
 }
 
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.hero-preview {
+  animation: rise 700ms var(--ease-smooth-out) 150ms both;
+}
+
+/* backwards, not both: a held end state would pin opacity and block the dim. */
+.preview-row {
+  animation: rise 500ms var(--ease-smooth-out) backwards;
+}
+
+.hero-glow {
+  background:
+    radial-gradient(60% 55% at 75% 35%, rgb(204 255 0 / 0.09), transparent 70%),
+    radial-gradient(40% 40% at 10% 0%, rgb(204 255 0 / 0.05), transparent 70%);
+}
+
+.lift {
+  transition:
+    transform 300ms var(--ease-smooth-out),
+    box-shadow 300ms var(--ease-smooth-out),
+    background-color 300ms var(--ease-smooth-out);
+}
+
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    var(--shadow-border-hover),
+    0 18px 40px -18px rgb(204 255 0 / 0.18);
+}
+
+.feature-stage {
+  background:
+    radial-gradient(70% 90% at 50% 100%, rgb(204 255 0 / 0.07), transparent 70%),
+    radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px) 0 0 / 14px 14px,
+    rgb(0 0 0 / 0.18);
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+.feature-dash {
+  animation: dash-flow 900ms linear infinite;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 26s linear infinite;
+}
+
+.marquee-reverse {
+  animation-direction: reverse;
+}
+
+.group:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+
+/* Each lock "clicks" shut in turn as the tickers slide past. */
+@keyframes lock-click {
+  0%,
+  78%,
+  100% {
+    transform: none;
+    filter: none;
+  }
+  84% {
+    transform: translateY(-1px) scale(1.3);
+    filter: drop-shadow(0 0 4px rgb(204 255 0 / 0.8));
+  }
+  90% {
+    transform: scale(0.92);
+  }
+}
+
+.lock-click {
+  animation: lock-click 3.6s var(--ease-out) infinite;
+}
+
+.cta-panel {
+  background:
+    radial-gradient(60% 70% at 50% 120%, rgb(204 255 0 / 0.16), transparent 70%),
+    linear-gradient(180deg, #242424, #191919);
+}
+
+.cta-button {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.5),
+    0 12px 36px -10px rgb(204 255 0 / 0.55);
+  animation: cta-breathe 3.2s ease-in-out infinite;
+}
+
+.cta-button:hover {
+  animation: none;
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.7),
+    0 18px 48px -10px rgb(204 255 0 / 0.75);
+}
+
+/* A light sheen that sweeps across the button every few seconds. */
+.cta-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: cta-sheen 3.2s var(--ease-out) infinite;
+}
+
+@keyframes cta-sheen {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes cta-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(204 255 0 / 0.5),
+      0 12px 36px -10px rgb(204 255 0 / 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(204 255 0 / 0.6),
+      0 14px 44px -8px rgb(204 255 0 / 0.7);
+  }
+}
+
+.wallet-button {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.45),
+    0 8px 24px -10px rgb(204 255 0 / 0.55);
+}
+
+.wallet-button:hover {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.7),
+    0 12px 32px -10px rgb(204 255 0 / 0.75);
+}
+
+/* Toast countdown: shrinks over the toast's lifetime, pauses on hover like the timer. */
+@keyframes toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.pyre-toast-bar {
+  animation: toast-countdown linear forwards;
+}
+
+[data-sonner-toaster]:hover .pyre-toast-bar {
+  animation-play-state: paused;
+}
+
+/* Fade sections in as they scroll into view, where the browser supports it. */
+@supports (animation-timeline: view()) {
+  .on-scroll {
+    animation: rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -139,7 +350,23 @@
 
   .reveal > *,
   .scan-line,
-  .lime-pulse {
-    animation: none !important;
+  .lime-pulse,
+  .hero-preview,
+  .preview-row,
+  .feature-dash,
+  .marquee-track,
+  .lock-click,
+  .cta-button,
+  .cta-button:hover,
+  .cta-button::before,
+  .pyre-toast-bar,
+  .on-scroll,
+  .group:hover .marquee-track {
+    animation: none;
+  }
+
+  .lift,
+  .lift:hover {
+    transform: none;
   }
 }

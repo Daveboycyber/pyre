@@ -6,37 +6,19 @@
  * Clearing site data resets the list.
  */
 
+import { readJson, writeJson } from "../storage.ts";
+import { normalizeWallet } from "./address.ts";
+
 const STORAGE_KEY = "pyre.dismissed.v0";
 
 type Ledger = Record<string, string[]>;
 
-function normalizeWallet(address: string | null | undefined): string | null {
-  if (!address || !address.startsWith("0x") || address.length !== 42) {
-    return null;
-  }
-  return address.toLowerCase();
-}
-
 function readLedger(): Ledger {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Ledger;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed;
-  } catch {
-    return {};
-  }
+  return readJson<Ledger>(STORAGE_KEY, {});
 }
 
 function writeLedger(ledger: Ledger) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ledger));
-  } catch {
-    // quota / private mode
-  }
+  writeJson(STORAGE_KEY, ledger);
 }
 
 /** Asset ids currently dismissed for this wallet. */

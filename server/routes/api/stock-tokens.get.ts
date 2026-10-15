@@ -2,6 +2,7 @@
  * Same-origin Stock Token list for chain 4663.
  * Fetches api.robinhood.com on the server so the browser is not blocked by CORS.
  */
+import { createError, defineEventHandler, setHeader } from "h3";
 
 const UPSTREAM = "https://api.robinhood.com/rhj/assets";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour

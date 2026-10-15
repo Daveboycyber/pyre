@@ -1,4 +1,5 @@
 import { decodeEventLog, parseAbiItem, type Log } from "viem";
+import { sameAddress } from "./address.ts";
 
 /** Throw unless the receipt says the tx executed. A mined revert is not success. */
 export function assertReceiptSuccess(
@@ -26,14 +27,14 @@ export function unwrappedWei(
 ): bigint | null {
   let total: bigint | null = null;
   for (const log of logs) {
-    if (log.address.toLowerCase() !== weth.toLowerCase()) continue;
+    if (!sameAddress(log.address, weth)) continue;
     try {
       const decoded = decodeEventLog({
         abi: [wethWithdrawal],
         data: log.data,
         topics: log.topics,
       });
-      if (decoded.args.src.toLowerCase() !== src.toLowerCase()) continue;
+      if (!sameAddress(decoded.args.src, src)) continue;
       total = (total ?? 0n) + decoded.args.wad;
     } catch {
       // Not a Withdrawal log.

@@ -1,6 +1,6 @@
 import { createConfig, http, injected } from "wagmi";
 import { walletConnect } from "wagmi/connectors";
-import { robinhoodChain } from "./chain";
+import { robinhoodChain } from "./chain.ts";
 
 /**
  * Reown / WalletConnect Cloud project ID.

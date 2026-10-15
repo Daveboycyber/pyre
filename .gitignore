@@ -10,10 +10,14 @@ attachments
 artifacts
 .grok
 .project_id
-AGENTS.md
 AGENTS.project.md
 .env
 .env.*
 *.log
 .DS_Store
 .cache
+
+# Foundry (contracts/)
+contracts/out
+contracts/cache
+contracts/lib

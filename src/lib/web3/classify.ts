@@ -1,5 +1,5 @@
-import { USDG_ADDRESS, WETH_ADDRESS } from "./chain";
-import { STOCK_BY_ADDRESS, STOCK_SYMBOLS } from "./stock-tokens";
+import { USDG_ADDRESS, WETH_ADDRESS } from "./chain.ts";
+import { STOCK_BY_ADDRESS, STOCK_SYMBOLS } from "./stock-tokens.ts";
 
 const STABLE_SYMBOLS = new Set([
   "ETH",
