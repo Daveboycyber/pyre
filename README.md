@@ -1,6 +1,13 @@
-# Pyre
+<p align="center">
+  <img src="public/favicon.svg" alt="Pyre logo" width="96" height="96">
+</p>
 
-**Wallet cleaner for [Robinhood Chain](https://robinhoodchain.blockscout.com) (chain id 4663).**
+<h1 align="center">Pyre</h1>
+
+<p align="center">
+  <strong>Wallet cleaner for <a href="https://robinhoodchain.blockscout.com">Robinhood Chain</a> (chain id 4663).</strong>
+</p>
+
 Pyre burns spam tokens and bait NFTs, revokes leftover token approvals, and sweeps quoted junk to ETH. Stock Tokens and stables stay locked.
 
 Pyre is non-custodial. It never sees a private key, and every burn, revoke, and swap is a transaction you sign in your own wallet.
