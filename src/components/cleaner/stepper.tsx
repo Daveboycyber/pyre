@@ -13,10 +13,7 @@ export function Stepper({ current }: { readonly current: number }) {
         }
 
         return (
-          <li
-            key={label}
-            className={cn("rounded-md px-2 py-1.5 text-center text-xs", stateClass)}
-          >
+          <li key={label} className={cn("rounded-md px-2 py-1.5 text-center text-xs", stateClass)}>
             {label}
           </li>
         );

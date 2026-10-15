@@ -1,24 +1,9 @@
-import { Check, CircleAlert, EyeOff, LoaderCircle, Lock, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { EyeOff, Lock, X } from "lucide-react";
+import { TxStatusIcon } from "@/components/cleaner/tx-status-icon";
 import { cn } from "@/lib/utils";
 import { formatFeeEth } from "@/lib/web3/fees";
 import { selectedAction, sweepNetWei } from "@/lib/web3/sweep";
-import type { Mode } from "@/lib/web3/types";
-import type { WalletAsset } from "@/lib/web3/use-wallet-cleaner";
-
-type TxStatus = "idle" | "pending" | "done" | "failed";
-
-// cspell:ignore sweepable
-
-/** Done / failed / in-flight marker shared by fee and asset rows; empty box when idle. */
-function TxStatusIcon({ status, active }: { readonly status?: TxStatus; readonly active?: boolean }) {
-  if (status === "done") return <Check className="size-4 shrink-0 text-primary" />;
-  if (status === "failed") return <CircleAlert className="size-4 shrink-0 text-destructive" />;
-  if (status === "pending" || active) {
-    return <LoaderCircle className="size-4 shrink-0 animate-spin text-primary" />;
-  }
-  return <span className="size-4 shrink-0 rounded-sm shadow-(--shadow-border)" />;
-}
+import type { Mode, WalletAsset } from "@/lib/web3/types";
 
 function actionLabel(asset: WalletAsset, mode: Mode) {
   const action = selectedAction(asset, mode);
@@ -29,103 +14,94 @@ function actionLabel(asset: WalletAsset, mode: Mode) {
   return "Burn";
 }
 
-export function FeeRow({
+function detail(asset: WalletAsset) {
+  if (asset.protected && !asset.dust) return "locked";
+  if (asset.dust && !asset.sweepable) return "below gas";
+  if (asset.quoteWei) return `${formatFeeEth(sweepNetWei(asset.quoteWei))} net`;
+  return asset.amount;
+}
+
+function canSelect(asset: WalletAsset) {
+  return !asset.protected || Boolean(asset.dust && asset.sweepable);
+}
+
+function LeadingIcon({
+  asset,
+  interactive,
+  dismissed,
   active,
-  status,
+  onToggle,
 }: {
+  readonly asset: WalletAsset;
+  readonly interactive?: boolean;
+  readonly dismissed?: boolean;
   readonly active?: boolean;
-  readonly status?: "idle" | "pending" | "done" | "failed";
+  readonly onToggle?: () => void;
 }) {
-  return (
-    <div
-      className={cn(
-        "flex min-h-14 items-center gap-3 rounded-md px-3 py-2",
-        active && "lime-pulse bg-background",
-      )}
-    >
-      <TxStatusIcon status={status} active={active} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm">Protocol fee</span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          Flat batch fee · treasury
-        </span>
-      </span>
-    </div>
-  );
+  if (dismissed) return <EyeOff className="size-4 shrink-0 text-muted-foreground" />;
+  if (interactive && canSelect(asset)) {
+    return (
+      <input
+        type="checkbox"
+        className="size-4 accent-primary"
+        aria-label={`Select ${asset.name}`}
+        checked={asset.selected}
+        onChange={onToggle}
+      />
+    );
+  }
+  if (asset.txStatus || active) return <TxStatusIcon status={asset.txStatus} active={active} />;
+  if (asset.protected) return <Lock className="size-4 shrink-0 text-muted-foreground" />;
+  return <TxStatusIcon />;
 }
 
 export function AssetRow({
   asset,
+  mode,
   interactive,
+  dismissed,
+  active,
   onToggle,
   onDismiss,
   onRestore,
-  dismissed,
-  active,
-  mode,
 }: {
   readonly asset: WalletAsset;
+  readonly mode: Mode;
   readonly interactive?: boolean;
+  readonly dismissed?: boolean;
+  readonly active?: boolean;
   readonly onToggle?: () => void;
   readonly onDismiss?: () => void;
   readonly onRestore?: () => void;
-  readonly dismissed?: boolean;
-  readonly active?: boolean;
-  readonly mode: Mode;
 }) {
-  const status = asset.txStatus;
-  let leadingIcon: ReactNode;
-  if (dismissed) {
-    leadingIcon = <EyeOff className="size-4 shrink-0 text-muted-foreground" />;
-  } else if (interactive && (!asset.protected || (asset.dust && asset.sweepable))) {
-    leadingIcon = (
-      <input
-        type="checkbox"
-        className="size-4 accent-primary"
-        checked={asset.selected}
-        disabled={asset.protected && !(asset.dust && asset.sweepable)}
-        onChange={onToggle}
-      />
-    );
-  } else if (status === "done" || status === "failed" || status === "pending" || active) {
-    leadingIcon = <TxStatusIcon status={status} active={active} />;
-  } else if (asset.protected) {
-    leadingIcon = <Lock className="size-4 shrink-0 text-muted-foreground" />;
-  } else {
-    leadingIcon = <TxStatusIcon />;
-  }
-
-  let assetDetail = "";
-  if (!dismissed) {
-    if (asset.protected && !asset.dust) {
-      assetDetail = " · locked";
-    } else if (asset.dust && !asset.sweepable) {
-      assetDetail = " · below gas";
-    } else if (asset.quoteWei) {
-      assetDetail = ` · ${formatFeeEth(sweepNetWei(asset.quoteWei))} net`;
-    } else {
-      assetDetail = ` · ${asset.amount}`;
-    }
-  }
+  const failed = asset.txStatus === "failed";
   const subtitle = dismissed
     ? `hidden · ${asset.symbol}`
-    : `${actionLabel(asset, mode)} · ${asset.symbol}${assetDetail}`;
+    : `${actionLabel(asset, mode)} · ${asset.symbol} · ${detail(asset)}`;
 
   return (
     <div
       className={cn(
-        "flex min-h-14 items-center gap-3 rounded-md px-3 py-2",
+        "flex min-h-14 items-center gap-3 rounded-md px-3 py-2 transition-colors duration-200",
         active && "lime-pulse bg-background",
+        failed && "bg-destructive/6",
         (asset.protected || dismissed) && "opacity-60",
         !asset.protected && !dismissed && interactive && "hover:bg-background",
       )}
     >
-      {leadingIcon}
+      <LeadingIcon
+        asset={asset}
+        interactive={interactive}
+        dismissed={dismissed}
+        active={active}
+        onToggle={onToggle}
+      />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm">{asset.name}</span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          {subtitle}
-        </span>
+        <span className="block truncate font-mono text-xs text-muted-foreground">{subtitle}</span>
+        {failed && asset.txError ? (
+          <span className="mt-0.5 block text-xs text-destructive">{asset.txError}</span>
+        ) : null}
       </span>
       {dismissed && onRestore ? (
         <button
@@ -141,6 +117,7 @@ export function AssetRow({
           type="button"
           onClick={onDismiss}
           title="Hide from scans"
+          aria-label={`Hide ${asset.name} from scans`}
           className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-foreground"
         >
           <X className="size-3.5" />
