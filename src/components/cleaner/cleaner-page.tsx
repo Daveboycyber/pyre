@@ -1,6 +1,7 @@
 import { CleanerHeader } from "@/components/cleaner/cleaner-header";
 import { ConnectCard } from "@/components/cleaner/connect-card";
 import { DemoBanner } from "@/components/cleaner/demo-banner";
+import { LastRunNotice } from "@/components/cleaner/last-run-notice";
 import { Notice } from "@/components/cleaner/notice";
 import { ResultPanel } from "@/components/cleaner/result-panel";
 import { ReviewPanel } from "@/components/cleaner/review-panel";
@@ -13,8 +14,18 @@ import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 export function CleanerPage() {
-  const { connected, demo, status, lastClean, scanError, setOpen, enterDemo, runScan } =
-    useWalletCleaner();
+  const {
+    connected,
+    demo,
+    status,
+    lastClean,
+    scanError,
+    previousClean,
+    setOpen,
+    enterDemo,
+    runScan,
+    dismissPreviousClean,
+  } = useWalletCleaner();
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -25,6 +36,10 @@ export function CleanerPage() {
 
         {status === "idle" && !connected ? (
           <ConnectCard onConnect={() => setOpen(true)} onDemo={enterDemo} />
+        ) : null}
+
+        {previousClean && !lastClean && (status === "ready" || status === "scanning") ? (
+          <LastRunNotice saved={previousClean} onDismiss={dismissPreviousClean} />
         ) : null}
 
         {status === "scanning" ? <ScanningCard /> : null}

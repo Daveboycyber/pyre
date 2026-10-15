@@ -2,7 +2,7 @@ import { MODES } from "@/components/cleaner/modes";
 import { cn } from "@/lib/utils";
 import type { Mode } from "@/lib/web3/types";
 
-export function ModeTabs({ mode, onChange }: { mode: Mode; onChange: (mode: Mode) => void }) {
+export function ModeTabs({ mode, onChange }: Readonly<{ mode: Mode; onChange: (mode: Mode) => void }>) {
   return (
     <div className="flex gap-2" role="tablist" aria-label="Cleanup mode">
       {MODES.map(({ id, label, icon: Icon }) => (

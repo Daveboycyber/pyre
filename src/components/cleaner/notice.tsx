@@ -26,16 +26,16 @@ export function Notice({
   actions,
   className,
 }: {
-  tone: Tone;
-  title: string;
-  children?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
+  readonly tone: Tone;
+  readonly title: string;
+  readonly children?: ReactNode;
+  readonly actions?: ReactNode;
+  readonly className?: string;
 }) {
   const { icon: Icon, ring, iconClass } = TONES[tone];
   return (
-    <section
-      role={tone === "error" ? "alert" : "status"}
+    <output
+      role={tone === "error" ? "alert" : undefined}
       className={cn("rounded-2xl p-4", ring, className)}
     >
       <div className="flex gap-3">
@@ -46,6 +46,6 @@ export function Notice({
           {actions ? <div className="mt-3 flex flex-wrap gap-2">{actions}</div> : null}
         </div>
       </div>
-    </section>
+    </output>
   );
 }

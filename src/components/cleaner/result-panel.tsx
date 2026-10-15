@@ -57,7 +57,7 @@ function feeText(result: LastClean) {
   return result.feePaid ? formatFeeEth(result.feeWei) : "not charged";
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value }: { readonly label: string; readonly value: string | number }) {
   return (
     <div className="flex justify-between gap-2">
       <dt className="text-muted-foreground">{label}</dt>
@@ -67,7 +67,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 }
 
 /** The "done" step: what happened, why anything failed, and what to do next. */
-export function ResultPanel({ result }: { result: LastClean }) {
+export function ResultPanel({ result }: { readonly result: LastClean }) {
   const { assets, mode, demo, retryFailed, runScan, disconnect } = useWalletCleaner();
   const outcome = cleanOutcome(result);
   const { title, body } = headline(outcome, result);
@@ -76,8 +76,8 @@ export function ResultPanel({ result }: { result: LastClean }) {
   const showReason = result.error && !failedLines.some((a) => a.txError === result.error);
 
   return (
-    <section
-      role={outcome === "failed" ? "alert" : "status"}
+    <output
+      role={outcome === "failed" ? "alert" : undefined}
       className={cn(
         "reveal flex flex-col gap-5 rounded-2xl bg-card p-5 transition-shadow duration-500",
         ring,
@@ -178,6 +178,6 @@ export function ResultPanel({ result }: { result: LastClean }) {
           {demo ? "Exit demo" : "Disconnect"}
         </Button>
       </div>
-    </section>
+    </output>
   );
 }

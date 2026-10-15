@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
+import { Toaster } from "@/components/ui/toaster";
 import { wagmiConfig } from "@/lib/web3/config";
 import { WalletCleanerProvider } from "@/lib/web3/use-wallet-cleaner";
 import appCss from "../styles.css?url";
@@ -57,6 +58,7 @@ export const Route = createRootRoute({
             </WalletCleanerProvider>
           </QueryClientProvider>
         </WagmiProvider>
+        <Toaster />
         <Scripts />
       </body>
     </html>

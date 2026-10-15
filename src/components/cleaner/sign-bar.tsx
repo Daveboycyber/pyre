@@ -15,12 +15,12 @@ export function SignBar({
   feeWei,
   waived,
   onSign,
-}: {
+}: Readonly<{
   actions: number;
   feeWei: bigint;
   waived: boolean;
   onSign: () => void;
-}) {
+}>) {
   return (
     <div className="sticky bottom-0 -mx-5 border-t border-border bg-background/95 px-5 py-4 backdrop-blur">
       <Button size="lg" className="w-full" onClick={onSign} disabled={actions <= 0}>
