@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ScanSearch } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { CtaBanner } from "@/components/cta-banner";
 import { FeatureGrid } from "@/components/feature-grid";
 import { HeroPreview } from "@/components/hero-preview";
 import { SiteFooter } from "@/components/site-footer";
@@ -244,25 +245,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="border-t border-border">
-          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 py-20 sm:px-6">
-            <ScanSearch className="size-6 text-primary" />
-            <h2 className="max-w-xl font-display text-3xl tracking-tight sm:text-4xl">
-              Open the cleaner. Leave the Stock Tokens where they are.
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link to="/clean">
-                  Open cleaner
-                  <ArrowRight />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => setOpen(true)}>
-                Connect wallet
-              </Button>
-            </div>
-          </div>
-        </section>
+        <CtaBanner onConnect={() => setOpen(true)} />
       </main>
 
       <SiteFooter />
