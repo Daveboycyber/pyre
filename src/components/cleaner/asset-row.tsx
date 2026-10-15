@@ -30,10 +30,10 @@ function canSelect(asset: WalletAsset) {
 }
 
 const BADGE_CLASS: Record<ClassificationLabel, string> = {
-  stock: "bg-primary/15 text-foreground",
-  stable: "bg-muted text-muted-foreground",
+  stock: "border border-primary bg-primary/15 text-primary",
+  stable: "border border-foreground/40 bg-transparent text-foreground",
   spam: "bg-primary text-primary-foreground",
-  unknown: "bg-muted text-muted-foreground",
+  unknown: "border border-foreground/55 bg-transparent text-foreground",
 };
 
 function LeadingIcon({
