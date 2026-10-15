@@ -1,4 +1,5 @@
 import { formatEther } from "viem";
+import { sameAddress } from "./address.ts";
 
 /** Flat ETH fee charged once per batch Clean (2+ actions). Override via env. */
 const DEFAULT_FEE_WEI = 500_000_000_000_000n; // 0.0005 ETH ≈ $1–2
@@ -94,5 +95,5 @@ export function pyreBatchIsDeployed() {
 
 /** Do not send user ETH to the placeholder. */
 export function treasuryIsLive() {
-  return TREASURY_ADDRESS.toLowerCase() !== PLACEHOLDER_TREASURY.toLowerCase();
+  return !sameAddress(TREASURY_ADDRESS, PLACEHOLDER_TREASURY);
 }

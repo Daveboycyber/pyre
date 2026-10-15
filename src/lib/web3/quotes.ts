@@ -1,7 +1,8 @@
 import type { PublicClient } from "viem";
-import { WETH_ADDRESS } from "./chain";
-import type { WalletAsset } from "./types";
-import { quoteBestToWeth } from "./uniswap";
+import { WETH_ADDRESS } from "./chain.ts";
+import type { WalletAsset } from "./types.ts";
+import { quoteBestToWeth } from "./uniswap.ts";
+import { sameAddress } from "./address.ts";
 
 const NATIVE_ETH = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
@@ -50,7 +51,7 @@ export async function attachLiveQuotes(
       if (asset.kind !== "token" || !asset.amountRaw || !asset.address) {
         return asset;
       }
-      if (asset.address.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
+      if (sameAddress(asset.address, WETH_ADDRESS)) {
         return { ...asset, quoteWei: asset.amountRaw, quoteFee: 0 };
       }
       const eligible = Boolean(asset.spam) || Boolean(asset.dust);

@@ -2,15 +2,16 @@ import { encodeFunctionData, type Abi, type PublicClient } from "viem";
 import {
   TREASURY_ADDRESS,
   treasuryIsLive,
-} from "./fees";
-import { sweepCutWei } from "./sweep";
+} from "./fees.ts";
+import { sweepCutWei } from "./sweep.ts";
 import {
   UNISWAP_QUOTER_V2,
   UNISWAP_SWAP_ROUTER_02,
   WETH_ADDRESS,
-} from "./chain";
-import { erc20Abi } from "./actions";
-import { assertReceiptSuccess, unwrappedWei } from "./receipt";
+} from "./chain.ts";
+import { erc20Abi } from "./actions.ts";
+import { assertReceiptSuccess, unwrappedWei } from "./receipt.ts";
+import { sameAddress } from "./address.ts";
 
 const FEE_TIERS = [100, 500, 3000, 10_000] as const;
 const SLIPPAGE_BPS = 100n;
@@ -94,7 +95,7 @@ export async function quoteBestToWeth(
   amountIn: bigint,
 ): Promise<UniQuote | null> {
   if (amountIn <= 0n) return null;
-  if (token.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
+  if (sameAddress(token, WETH_ADDRESS)) {
     return { amountOut: amountIn, fee: 0 };
   }
   let best: UniQuote | null = null;
@@ -190,7 +191,7 @@ export async function executeSweepSwap(opts: {
 
   let hash: `0x${string}`;
   let grossWei: bigint;
-  if (token.toLowerCase() === WETH_ADDRESS.toLowerCase()) {
+  if (sameAddress(token, WETH_ADDRESS)) {
     hash = await walletClient.sendTransaction({
       to: WETH_ADDRESS,
       data: encodeFunctionData({

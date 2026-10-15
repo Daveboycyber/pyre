@@ -7,42 +7,24 @@
  * Not on-chain. Clearing site data resets the balance.
  */
 
+import { readJson, writeJson } from "../storage.ts";
+import { normalizeWallet } from "./address.ts";
+
 const STORAGE_KEY = "pyre.credits.v0";
 
 type Ledger = Record<string, number>;
 
-function normalize(address: string | null | undefined): string | null {
-  if (!address || !address.startsWith("0x") || address.length !== 42) {
-    return null;
-  }
-  return address.toLowerCase();
-}
-
 function readLedger(): Ledger {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Ledger;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed;
-  } catch {
-    return {};
-  }
+  return readJson<Ledger>(STORAGE_KEY, {});
 }
 
 function writeLedger(ledger: Ledger) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ledger));
-  } catch {
-    // quota / private mode — ignore
-  }
+  writeJson(STORAGE_KEY, ledger);
 }
 
 /** Current credit balance for a wallet (0 if unknown / offline). */
 export function getCredits(address: string | null | undefined): number {
-  const key = normalize(address);
+  const key = normalizeWallet(address);
   if (!key) return 0;
   const n = readLedger()[key] ?? 0;
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
@@ -53,7 +35,7 @@ export function addCredits(
   address: string | null | undefined,
   amount: number,
 ): number {
-  const key = normalize(address);
+  const key = normalizeWallet(address);
   if (!key || amount <= 0) return getCredits(address);
   const ledger = readLedger();
   const next = (ledger[key] ?? 0) + Math.floor(amount);
@@ -66,7 +48,7 @@ export function addCredits(
  * Spend one credit if available. Returns true when a credit was consumed.
  */
 export function spendCredit(address: string | null | undefined): boolean {
-  const key = normalize(address);
+  const key = normalizeWallet(address);
   if (!key) return false;
   const ledger = readLedger();
   const current = ledger[key] ?? 0;
