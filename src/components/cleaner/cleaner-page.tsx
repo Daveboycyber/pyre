@@ -1,18 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeftRight,
-  Check,
-  CircleAlert,
   Eye,
   EyeOff,
   Flame,
   LoaderCircle,
-  Lock,
   Shield,
   ShieldAlert,
   Wallet,
-  X,
 } from "lucide-react";
+import { AssetRow, FeeRow } from "@/components/cleaner/asset-row";
+import { stepIndex } from "@/components/cleaner/steps";
+import { Stepper } from "@/components/cleaner/stepper";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -20,176 +19,7 @@ import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { cn } from "@/lib/utils";
 import { explorerTxUrl } from "@/lib/web3/blockscout";
 import { formatFeeEth, PROTOCOL_FEE_ID } from "@/lib/web3/fees";
-import { selectedAction, sweepNetWei } from "@/lib/web3/sweep";
-import type { Mode } from "@/lib/web3/types";
-import {
-  estimate,
-  shortAddress,
-  useWalletCleaner,
-  type WalletAsset,
-} from "@/lib/web3/use-wallet-cleaner";
-
-const STEPS = ["Connect", "Scan", "Review", "Sign"] as const;
-
-function stepIndex(status: string, connected: boolean) {
-  if (!connected || status === "idle") return 0;
-  if (status === "scanning") return 1;
-  if (status === "ready") return 2;
-  return 3;
-}
-
-function actionLabel(asset: WalletAsset, mode: Mode) {
-  const action = selectedAction(asset, mode);
-  if (action === "dust-swap") return "Swap dust";
-  if (action === "sweep") return "Sweep";
-  if (asset.kind === "approval") return "Revoke";
-  if (asset.kind === "nft") return "Burn NFT";
-  return "Burn";
-}
-
-function FeeRow({
-  active,
-  status,
-}: {
-  active?: boolean;
-  status?: "idle" | "pending" | "done" | "failed";
-}) {
-  return (
-    <div
-      className={cn(
-        "flex min-h-14 items-center gap-3 rounded-md px-3 py-2",
-        active && "lime-pulse bg-background",
-      )}
-    >
-      {status === "done" ? (
-        <Check className="size-4 text-primary" />
-      ) : status === "failed" ? (
-        <CircleAlert className="size-4 text-destructive" />
-      ) : status === "pending" || active ? (
-        <LoaderCircle className="size-4 animate-spin text-primary" />
-      ) : (
-        <span className="size-4 rounded-sm shadow-[var(--shadow-border)]" />
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm">Protocol fee</span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          Flat batch fee · treasury
-        </span>
-      </span>
-    </div>
-  );
-}
-
-function AssetRow({
-  asset,
-  interactive,
-  onToggle,
-  onDismiss,
-  onRestore,
-  dismissed,
-  active,
-  mode,
-}: {
-  asset: WalletAsset;
-  interactive?: boolean;
-  onToggle?: () => void;
-  onDismiss?: () => void;
-  onRestore?: () => void;
-  dismissed?: boolean;
-  active?: boolean;
-  mode: Mode;
-}) {
-  const status = asset.txStatus;
-  return (
-    <div
-      className={cn(
-        "flex min-h-14 items-center gap-3 rounded-md px-3 py-2",
-        active && "lime-pulse bg-background",
-        (asset.protected || dismissed) && "opacity-60",
-        !asset.protected && !dismissed && interactive && "hover:bg-background",
-      )}
-    >
-      {dismissed ? (
-        <EyeOff className="size-4 shrink-0 text-muted-foreground" />
-      ) : interactive && (!asset.protected || (asset.dust && asset.sweepable)) ? (
-        <input
-          type="checkbox"
-          className="size-4 accent-primary"
-          checked={asset.selected}
-          disabled={asset.protected && !(asset.dust && asset.sweepable)}
-          onChange={onToggle}
-        />
-      ) : status === "done" ? (
-        <Check className="size-4 shrink-0 text-primary" />
-      ) : status === "failed" ? (
-        <CircleAlert className="size-4 shrink-0 text-destructive" />
-      ) : status === "pending" || active ? (
-        <LoaderCircle className="size-4 shrink-0 animate-spin text-primary" />
-      ) : asset.protected ? (
-        <Lock className="size-4 shrink-0 text-muted-foreground" />
-      ) : (
-        <span className="size-4 shrink-0 rounded-sm shadow-[var(--shadow-border)]" />
-      )}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm">{asset.name}</span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          {dismissed
-            ? `hidden · ${asset.symbol}`
-            : `${actionLabel(asset, mode)} · ${asset.symbol}`}
-          {!dismissed &&
-            (asset.protected && !asset.dust
-              ? " · locked"
-              : asset.dust && !asset.sweepable
-                ? " · below gas"
-                : asset.quoteWei
-                  ? ` · ${formatFeeEth(sweepNetWei(asset.quoteWei))} net`
-                  : ` · ${asset.amount}`)}
-        </span>
-      </span>
-      {dismissed && onRestore ? (
-        <button
-          type="button"
-          onClick={onRestore}
-          className="shrink-0 rounded-md px-2 py-1 text-xs text-primary hover:bg-background"
-        >
-          Restore
-        </button>
-      ) : null}
-      {!dismissed && onDismiss && !asset.protected ? (
-        <button
-          type="button"
-          onClick={onDismiss}
-          title="Hide from scans"
-          className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-background hover:text-foreground"
-        >
-          <X className="size-3.5" />
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function Stepper({ current }: { current: number }) {
-  return (
-    <ol className="grid grid-cols-4 gap-2" aria-label="Cleanup steps">
-      {STEPS.map((label, i) => (
-        <li
-          key={label}
-          className={cn(
-            "rounded-md px-2 py-1.5 text-center text-xs",
-            i === current
-              ? "bg-primary text-primary-foreground"
-              : i < current
-                ? "bg-card text-foreground shadow-[var(--shadow-border)]"
-                : "text-muted-foreground",
-          )}
-        >
-          {label}
-        </li>
-      ))}
-    </ol>
-  );
-}
+import { estimate, shortAddress, useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 export function CleanerPage() {
   const {
