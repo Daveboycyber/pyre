@@ -1,14 +1,20 @@
 /**
- * Safe JSON helpers for browser localStorage.
+ * Safe JSON helpers for browser storage.
  *
  * Every read and write is guarded: SSR (no window), private mode, quota
  * errors and corrupt JSON all fall back quietly instead of throwing.
  */
 
-export function readJson<T extends object>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
+type Area = "local" | "session";
+
+function store(area: Area): Storage | undefined {
+  if (typeof window === "undefined") return undefined;
+  return area === "session" ? window.sessionStorage : window.localStorage;
+}
+
+export function readJson<T extends object>(key: string, fallback: T, area: Area = "local"): T {
   try {
-    const raw = window.localStorage.getItem(key);
+    const raw = store(area)?.getItem(key);
     if (!raw) return fallback;
     const parsed: unknown = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed as T) : fallback;
@@ -17,11 +23,18 @@ export function readJson<T extends object>(key: string, fallback: T): T {
   }
 }
 
-export function writeJson(key: string, value: unknown): void {
-  if (typeof window === "undefined") return;
+export function writeJson(key: string, value: unknown, area: Area = "local"): void {
   try {
-    window.localStorage.setItem(key, JSON.stringify(value));
+    store(area)?.setItem(key, JSON.stringify(value));
   } catch {
     // quota / private mode — ignore
+  }
+}
+
+export function removeKey(key: string, area: Area = "local"): void {
+  try {
+    store(area)?.removeItem(key);
+  } catch {
+    // ignore
   }
 }
