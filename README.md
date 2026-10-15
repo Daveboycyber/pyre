@@ -58,14 +58,20 @@ EOA wallets only call `collectFee()`. `clean()` is self-only (`msg.sender == add
 ## Project layout
 
 ```
-contracts/          PyreBatch.sol + deploy notes
-src/routes/         /, /clean, /fees
-src/components/     Landing, cleaner, fees pages and UI kit
-src/lib/web3/       Scan, classify, execute, receipts, fees, sweep, credits
-public/             Static assets incl. the Stock Token snapshot
-scripts/            Build, migration, preview and smoke-test tooling
-server/             Server middleware
-migrations/         SQL migrations
+contracts/                PyreBatch.sol + deploy notes
+src/routes/               /, /clean, /fees, /privacy, /terms
+src/components/
+  layout/                 Header, footer, logo
+  landing/                Hero preview, feature grid, FAQ, CTA banner
+  cleaner/                Cleaner page, stepper, asset and fee rows
+  legal/                  Privacy and terms pages
+  ui/ brand/ wallet/      Shared primitives, token marks, wallet dialog
+src/lib/
+  web3/                   Scan, classify, execute, receipts, fees, sweep, credits
+  brand/                  Stock Token logo data
+  site-nav.ts storage.ts  Shared nav config and safe localStorage helpers
+public/                   Static assets incl. the Stock Token snapshot
+scripts/                  Build, migration, preview and smoke-test tooling
 ```
 
 ## Security
