@@ -19,8 +19,8 @@ import {
 import { robinhoodChain } from "./chain.ts";
 import { ensureStockRegistry } from "./stock-tokens.ts";
 import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
-import { actionErrorMessage } from "./tx-error.ts";
-import { DEMO_ADDRESS } from "./demo-assets.ts";
+import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
+import { DEMO_ADDRESS, DEMO_FAILURES } from "./demo-assets.ts";
 import { batchFeeToSend, buildFeeTx } from "./batch.ts";
 import { assertReceiptSuccess } from "./receipt.ts";
 import {
@@ -140,7 +140,7 @@ function useWalletCleanerState() {
       setStatus("ready");
     } catch (err) {
       console.error("[pyre] scan failed", err);
-      setScanError(err instanceof Error ? err.message : "Scan failed");
+      setScanError(scanErrorMessage(err));
       setStatus("idle");
     }
   }, [address, publicClient, demo, ensureRobinhood]);
@@ -210,17 +210,15 @@ function useWalletCleanerState() {
     );
     if (toProcess.length === 0) return;
     const baseFeeWei = protocolFeeWei(toProcess.length);
+    // Credits are a real-wallet ledger; the demo always shows the full fee.
     const canWaive =
-      baseFeeWei > 0n &&
-      (demo || (Boolean(address) && getCredits(address) >= 1));
+      baseFeeWei > 0n && !demo && Boolean(address) && getCredits(address) >= 1;
     let feeWaived = false;
     let feeWei = baseFeeWei;
-    if (canWaive) {
-      if (demo || spendCredit(address)) {
-        feeWaived = true;
-        feeWei = 0n;
-        setCredits(getCredits(address));
-      }
+    if (canWaive && spendCredit(address)) {
+      feeWaived = true;
+      feeWei = 0n;
+      setCredits(getCredits(address));
     }
 
     setStatus("signing");
@@ -312,6 +310,11 @@ function useWalletCleanerState() {
       const action = selectedAction(asset, mode);
 
       try {
+        const demoFailure = demo ? DEMO_FAILURES[asset.id] : undefined;
+        if (demoFailure) {
+          await sleep(700);
+          throw new Error(demoFailure);
+        }
         if (action === "dust-swap" || action === "sweep") {
           if (demo) {
             await sleep(700);
@@ -451,6 +454,23 @@ function useWalletCleanerState() {
     setStatus("done");
   }, [assets, walletClient, address, publicClient, demo, mode, ensureRobinhood]);
 
+  /** Back to review with only the lines that failed, ready to sign again. */
+  const retryFailed = useCallback(() => {
+    setAssets((prev) =>
+      prev
+        .filter((a) => a.txStatus !== "done")
+        .map((a) =>
+          a.txStatus === "failed"
+            ? { ...a, selected: true, txStatus: undefined, txError: undefined }
+            : { ...a, selected: false },
+        ),
+    );
+    setLastClean(null);
+    setCurrentId(null);
+    setFeeStatus("idle");
+    setStatus("ready");
+  }, []);
+
   const wasConnected = useRef(false);
   useEffect(() => {
     if (demo) return;
@@ -518,6 +538,7 @@ function useWalletCleanerState() {
     undismiss,
     toggleShowDismissed,
     clean,
+    retryFailed,
     runScan,
   };
 }

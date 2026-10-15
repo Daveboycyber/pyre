@@ -178,3 +178,11 @@ const RAW: WalletAsset[] = [
 export const DEMO_ASSETS: WalletAsset[] = RAW.map((asset) =>
   withSweepFlags(asset, PROTOCOL_FEE_WEI),
 );
+
+/**
+ * Demo lines that fail on purpose so the preview shows real error handling.
+ * The message goes through the same error mapper as a live revert.
+ */
+export const DEMO_FAILURES: Record<string, string> = {
+  "token:unk": "execution reverted",
+};
