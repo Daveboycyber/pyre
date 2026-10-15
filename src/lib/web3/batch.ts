@@ -4,7 +4,7 @@ import {
   TREASURY_ADDRESS,
   pyreBatchIsDeployed,
   resolveBatchFee,
-} from "./fees";
+} from "./fees.ts";
 
 export const pyreBatchAbi = [
   {

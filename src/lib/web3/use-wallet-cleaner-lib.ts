@@ -1,17 +1,17 @@
 import { usePublicClient } from "wagmi";
-import { KNOWN_SPENDERS } from "./chain";
-import { fetchTokenBalances, tokenContractAddress } from "./blockscout";
-import { classifyHolding } from "./classify";
-import { erc20Abi, erc721Abi } from "./actions";
-import { DEMO_ASSETS } from "./demo-assets";
-import { PROTOCOL_FEE_WEI, protocolFeeWei } from "./fees";
+import { KNOWN_SPENDERS } from "./chain.ts";
+import { fetchTokenBalances, tokenContractAddress } from "./blockscout.ts";
+import { classifyHolding } from "./classify.ts";
+import { erc20Abi, erc721Abi } from "./actions.ts";
+import { DEMO_ASSETS } from "./demo-assets.ts";
+import { PROTOCOL_FEE_WEI, protocolFeeWei } from "./fees.ts";
 import {
   selectedAction,
   sweepCutWei,
   sweepNetWei,
   withSweepFlags,
-} from "./sweep";
-import type { Mode, WalletAsset } from "./types";
+} from "./sweep.ts";
+import type { Mode, WalletAsset } from "./types.ts";
 
 function classifyFields(
   symbol: string | null | undefined,
@@ -28,7 +28,7 @@ function classifyFields(
   } as const;
 }
 
-export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types";
+export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
 
 export function applyMode(assets: WalletAsset[], mode: Mode): WalletAsset[] {
   return assets.map((asset) => {

@@ -1,5 +1,5 @@
-import { isStockToken, parseDisplayAmount } from "./classify";
-import type { WalletAsset } from "./types";
+import { isStockToken, parseDisplayAmount } from "./classify.ts";
+import type { WalletAsset } from "./types.ts";
 
 /** 1.25% of ETH received, inside the 1–1.5% band. */
 export const SWEEP_CUT_BPS = 125n;

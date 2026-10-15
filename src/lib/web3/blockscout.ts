@@ -1,5 +1,5 @@
-import { robinhoodChain } from "./chain";
-import { tokenContractAddress, type TokenAddressFields } from "./token-address";
+import { robinhoodChain } from "./chain.ts";
+import { tokenContractAddress, type TokenAddressFields } from "./token-address.ts";
 
 const API_BASE = robinhoodChain.blockExplorers.default.apiUrl;
 

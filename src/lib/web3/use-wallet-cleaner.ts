@@ -16,45 +16,45 @@ import {
   useSwitchChain,
   useWalletClient,
 } from "wagmi";
-import { robinhoodChain } from "./chain";
-import { ensureStockRegistry } from "./stock-tokens";
-import { disposeErc20, disposeErc721, revokeApproval } from "./execute";
-import { actionErrorMessage } from "./tx-error";
-import { DEMO_ADDRESS } from "./demo-assets";
-import { batchFeeToSend, buildFeeTx } from "./batch";
-import { assertReceiptSuccess } from "./receipt";
+import { robinhoodChain } from "./chain.ts";
+import { ensureStockRegistry } from "./stock-tokens.ts";
+import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
+import { actionErrorMessage } from "./tx-error.ts";
+import { DEMO_ADDRESS } from "./demo-assets.ts";
+import { batchFeeToSend, buildFeeTx } from "./batch.ts";
+import { assertReceiptSuccess } from "./receipt.ts";
 import {
   addCredits,
   creditsEarnedFromClean,
   creditsForFeeWithoutSuccess,
   getCredits,
   spendCredit,
-} from "./credits";
+} from "./credits.ts";
 import {
   dismissAsset,
   getDismissedIds,
   pruneDismissedToHeld,
   undismissAsset,
-} from "./dismissed";
-import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees";
-import { attachLiveQuotes } from "./quotes";
+} from "./dismissed.ts";
+import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees.ts";
+import { attachLiveQuotes } from "./quotes.ts";
 import {
   selectedAction,
   sweepCutWei,
   sweepNetWei,
   withSweepFlags,
-} from "./sweep";
-import { executeSweepSwap } from "./uniswap";
-import type { LastClean, Mode, ScanStatus, WalletAsset } from "./types";
+} from "./sweep.ts";
+import { executeSweepSwap } from "./uniswap.ts";
+import type { LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
 import {
   applyMode,
   buildAssetsForAddress,
   cloneDemo,
   sleep,
-} from "./use-wallet-cleaner-lib";
+} from "./use-wallet-cleaner-lib.ts";
 
-export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types";
-export { estimate, shortAddress } from "./use-wallet-cleaner-lib";
+export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
+export { estimate, shortAddress } from "./use-wallet-cleaner-lib.ts";
 
 function useWalletCleanerState() {
   const { address: wagmiAddress, isConnected, chainId } = useAccount();

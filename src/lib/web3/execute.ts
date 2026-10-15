@@ -1,6 +1,6 @@
 import type { PublicClient } from "viem";
 import { encodeFunctionData } from "viem";
-import { robinhoodChain } from "./chain";
+import { robinhoodChain } from "./chain.ts";
 import {
   buildErc20Burn,
   buildErc20DeadTransfer,
@@ -10,7 +10,7 @@ import {
   buildErc721RevokeAll,
   erc20Abi,
   erc721Abi,
-} from "./actions";
+} from "./actions.ts";
 
 const SINK_ADDRESS = "0x0000000000000000000000000000000000000001" as const;
 

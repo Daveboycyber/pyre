@@ -1,6 +1,6 @@
-import type { WalletAsset } from "./types";
-import { PROTOCOL_FEE_WEI } from "./fees";
-import { withSweepFlags } from "./sweep";
+import type { WalletAsset } from "./types.ts";
+import { PROTOCOL_FEE_WEI } from "./fees.ts";
+import { withSweepFlags } from "./sweep.ts";
 
 export const DEMO_ADDRESS =
   "0x3d2E9f81C4a7B6e0D1c8A5f2E9b4C7d0A3e6F812" as const;
@@ -83,7 +83,7 @@ const RAW: WalletAsset[] = [
     kind: "token",
     standard: "ERC-20",
     address: "0x5555555555555555555555555555555555555555",
-    name: "http://tesla-airdrop.xyz",
+    name: "https://tesla-airdrop.xyz",
     symbol: "TSLAX",
     amount: "88",
     amountRaw: 88n,
