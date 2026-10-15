@@ -6,6 +6,8 @@ const REASON_COPY: Record<string, string> = {
   address_is_known_stable: "Known stable or wrapped ETH",
   symbol_is_known_stable: "Known stable symbol",
   no_positive_signals: "No stock or spam signal",
+  open_spender_allowance: "Open token allowance",
+  open_operator_approval: "Collection operator still approved",
 };
 
 export function classificationTitle(label: ClassificationLabel) {
