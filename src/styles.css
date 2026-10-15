@@ -32,6 +32,7 @@
 
   --shadow-border: 0 0 0 1px rgb(204 255 0 / 0.14);
   --shadow-border-hover: 0 0 0 1px rgb(204 255 0 / 0.32);
+  --shadow-hairline: 0 0 0 1px rgb(255 255 255 / 0.08);
 
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -71,6 +72,18 @@
   ::selection {
     background: var(--color-primary);
     color: var(--color-primary-foreground);
+  }
+}
+
+/* Inline text link inside body copy. */
+@utility text-link {
+  color: var(--color-foreground);
+  text-decoration-line: underline;
+  text-underline-offset: 4px;
+  transition: color 150ms ease;
+
+  &:hover {
+    color: var(--color-primary);
   }
 }
 

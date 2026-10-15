@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 export function CtaBanner() {
   return (
     <section className="px-5 py-20 sm:px-6">
-      <div className="cta-panel on-scroll relative mx-auto max-w-6xl overflow-hidden rounded-[28px] px-6 py-16 text-center shadow-[0_0_0_1px_rgb(255_255_255/0.07)] sm:px-12 sm:py-24">
+      <div className="cta-panel on-scroll relative mx-auto max-w-6xl overflow-hidden rounded-[28px] px-6 py-16 text-center shadow-[var(--shadow-hairline)] sm:px-12 sm:py-24">
         <span
           aria-hidden="true"
           className="absolute inset-x-0 top-0 mx-auto h-px max-w-md bg-gradient-to-r from-transparent via-primary/70 to-transparent"

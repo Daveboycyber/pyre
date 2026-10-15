@@ -2,10 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ArrowUpRight, FileText, MessageCircle, Plus, ShieldCheck } from "lucide-react";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
-
-const inlineLink =
-  "text-foreground underline underline-offset-4 transition-colors hover:text-primary";
 
 const FAQS: { q: string; a: ReactNode }[] = [
   {
@@ -42,11 +40,11 @@ const FAQS: { q: string; a: ReactNode }[] = [
       <>
         No accounts and no tracking. Your hidden-asset list and fee credits stay in your own
         browser. See the{" "}
-        <Link to="/privacy" className={inlineLink}>
+        <Link to="/privacy" className="text-link">
           Privacy Policy
         </Link>{" "}
         and{" "}
-        <Link to="/terms" className={inlineLink}>
+        <Link to="/terms" className="text-link">
           Terms
         </Link>{" "}
         for the details.
@@ -75,10 +73,7 @@ export function FaqSection() {
     <section id="faq" className="scroll-mt-20 border-t border-border">
       <div className="mx-auto grid max-w-6xl gap-12 px-5 py-20 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">FAQ</p>
-          <h2 className="on-scroll mt-3 font-display text-3xl tracking-tight sm:text-4xl">
-            Straight answers.
-          </h2>
+          <SectionHeading eyebrow="FAQ" title="Straight answers." />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             What Pyre touches, what it never touches, and what it costs.
           </p>

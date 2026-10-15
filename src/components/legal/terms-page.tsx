@@ -36,10 +36,7 @@ const SECTIONS: LegalSection[] = [
       <p>
         You pay network gas. Batches and sweeps also carry a protocol fee, shown before you sign and
         listed on the{" "}
-        <Link
-          to="/fees"
-          className="text-foreground underline underline-offset-4 hover:text-primary"
-        >
+        <Link to="/fees" className="text-link">
           Fees
         </Link>{" "}
         page.

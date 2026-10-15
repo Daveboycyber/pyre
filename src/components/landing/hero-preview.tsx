@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2, Lock } from "lucide-react";
-import { STOCK_LOGOS } from "@/lib/brand/stock-logos";
+import { StockLogoMark } from "@/components/brand/stock-logo-mark";
 import { cn } from "@/lib/utils";
 
 type Mark = "usdg" | "weth" | "spam" | "nft" | "stock";
@@ -132,20 +132,10 @@ function TokenMark({ mark, symbol }: { mark: Mark; symbol: string }) {
           ?
         </span>
       );
-    case "stock": {
-      const logo = STOCK_LOGOS.find((l) => l.ticker === symbol);
+    case "stock":
       return (
-        <span
-          className={cn(base, "shadow-[0_0_0_1px_rgb(255_255_255/0.1)]")}
-          style={logo ? { background: logo.bg, color: logo.fg } : undefined}
-        >
-          {logo ? (
-            <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
-              <path d={logo.d} />
-            </svg>
-          ) : (
-            <span className="font-mono text-[10px] font-semibold">{symbol.slice(0, 2)}</span>
-          )}
+        <span className="relative shrink-0">
+          <StockLogoMark ticker={symbol} className="size-7" />
           <span className="absolute -right-0.5 -bottom-0.5 flex size-3 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-[#151515]">
             <svg viewBox="0 0 8 8" className="size-1.5" fill="currentColor">
               <path d="M1 6 3 3.5 4.5 5 7 2v4H1Z" />
@@ -153,7 +143,6 @@ function TokenMark({ mark, symbol }: { mark: Mark; symbol: string }) {
           </span>
         </span>
       );
-    }
   }
 }
 
@@ -219,7 +208,7 @@ export function HeroPreview({ className }: { className?: string }) {
       <div className="overflow-hidden rounded-[22px] bg-[#151515] shadow-[0_0_0_1px_rgb(255_255_255/0.08),0_30px_80px_-24px_rgb(0_0_0/0.8)]">
         <div className="flex items-center justify-between px-5 pt-5">
           <p className="text-[17px] font-semibold tracking-tight">Cleanup</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-foreground shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-foreground shadow-[var(--shadow-hairline)]">
             <span className="size-2 rounded-full bg-primary" />
             Robinhood Chain
           </span>
@@ -296,7 +285,7 @@ export function HeroPreview({ className }: { className?: string }) {
                 </span>
                 <span className="flex w-[78px] justify-end">
                   {locked ? (
-                    <span className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] text-muted-foreground shadow-[0_0_0_1px_rgb(255_255_255/0.08)]">
+                    <span className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] text-muted-foreground shadow-[var(--shadow-hairline)]">
                       <Lock className="size-3" />
                       Locked
                     </span>

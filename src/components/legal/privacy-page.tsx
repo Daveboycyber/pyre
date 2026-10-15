@@ -61,10 +61,7 @@ const SECTIONS: LegalSection[] = [
     body: (
       <p>
         If this policy changes, we will update the date above. Questions? Open an issue on{" "}
-        <a
-          href="https://github.com/Daveboycyber/pyre/issues"
-          className="text-foreground underline underline-offset-4 hover:text-primary"
-        >
+        <a href="https://github.com/Daveboycyber/pyre/issues" className="text-link">
           GitHub
         </a>
         .

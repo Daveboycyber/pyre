@@ -9,6 +9,8 @@ import { SiteHeader } from "@/components/layout/site-header";
 import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
 
 const FLOW = [
@@ -50,9 +52,7 @@ export function LandingPage() {
         <section className="hero-glow overflow-hidden">
           <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-14 sm:px-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:py-24">
             <div className="reveal max-w-2xl">
-              <p className="text-xs tracking-[0.22em] text-muted-foreground uppercase">
-                Robinhood Chain wallet cleaner
-              </p>
+              <Eyebrow>Robinhood Chain wallet cleaner</Eyebrow>
               <h1 className="mt-4 font-display text-4xl leading-[1.12] tracking-tight sm:text-5xl lg:text-6xl">
                 Burn the spam. Keep the Stock Tokens.
               </h1>
@@ -124,20 +124,14 @@ export function LandingPage() {
 
         <section className="border-t border-border">
           <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Why Pyre</p>
-            <h2 className="on-scroll mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-              Built to clean a wallet without drama.
-            </h2>
+            <SectionHeading eyebrow="Why Pyre" title="Built to clean a wallet without drama." />
             <FeatureGrid />
           </div>
         </section>
 
         <section id="fees" className="scroll-mt-20 border-t border-border">
           <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Pricing</p>
-            <h2 className="on-scroll mt-3 max-w-lg font-display text-3xl tracking-tight sm:text-4xl">
-              Gas in ETH. A flat fee only when you batch.
-            </h2>
+            <SectionHeading eyebrow="Pricing" title="Gas in ETH. A flat fee only when you batch." />
             <div className="mt-10 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>

@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Unlink,
 } from "lucide-react";
+import { StockLogoMark } from "@/components/brand/stock-logo-mark";
 import { STOCK_LOGOS, type StockLogo } from "@/lib/brand/stock-logos";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ type Feature = {
 };
 
 const chip =
-  "inline-flex items-center gap-1.5 rounded-full bg-background/70 px-2.5 py-1 text-[11px] shadow-[0_0_0_1px_rgb(255_255_255/0.07)]";
+  "inline-flex items-center gap-1.5 rounded-full bg-background/70 px-2.5 py-1 text-[11px] shadow-[var(--shadow-hairline)]";
 
 function BurnVisual() {
   return (
@@ -63,14 +64,7 @@ function BurnVisual() {
 function StockChip({ logo, index }: { logo: StockLogo; index: number }) {
   return (
     <span className={cn(chip, "shrink-0 gap-2 py-1 pr-2 pl-1 font-mono text-foreground")}>
-      <span
-        className="flex size-6 items-center justify-center rounded-full shadow-[0_0_0_1px_rgb(255_255_255/0.1)]"
-        style={{ background: logo.bg, color: logo.fg }}
-      >
-        <svg viewBox="0 0 24 24" className="size-3.5" fill="currentColor">
-          <path d={logo.d} />
-        </svg>
-      </span>
+      <StockLogoMark ticker={logo.ticker} className="size-6" />
       {logo.ticker}
       <Lock
         className="lock-click size-3 text-primary"
@@ -99,7 +93,7 @@ function LockedVisual() {
 function SignVisual() {
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="w-44 rounded-xl bg-background/70 p-3 shadow-[0_0_0_1px_rgb(255_255_255/0.07)] transition-transform duration-500 ease-[var(--ease-smooth-out)] group-hover:-translate-y-1">
+      <div className="w-44 rounded-xl bg-background/70 p-3 shadow-[var(--shadow-hairline)] transition-transform duration-500 ease-[var(--ease-smooth-out)] group-hover:-translate-y-1">
         <p className="text-[10px] tracking-wide text-muted-foreground uppercase">Your wallet</p>
         <p className="mt-1 text-xs">Confirm transaction</p>
         <div className="mt-2.5 grid grid-cols-2 gap-1.5 text-center text-[10px]">
@@ -118,7 +112,7 @@ function SignVisual() {
 function RevokeVisual() {
   return (
     <div className="flex h-full items-center justify-center px-4">
-      <div className="w-full max-w-xs rounded-xl bg-background/70 p-3 shadow-[0_0_0_1px_rgb(255_255_255/0.07)]">
+      <div className="w-full max-w-xs rounded-xl bg-background/70 p-3 shadow-[var(--shadow-hairline)]">
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-muted-foreground">Permit2 · unknown spender</span>
           <span className="font-mono text-muted-foreground">USDG</span>
@@ -153,7 +147,7 @@ function ReviewVisual() {
         {lines.map((l, i) => (
           <li
             key={l.t}
-            className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-[11px] shadow-[0_0_0_1px_rgb(255_255_255/0.07)] transition-transform duration-500 ease-[var(--ease-smooth-out)] group-hover:translate-x-1"
+            className="flex items-center gap-2 rounded-lg bg-background/70 px-2.5 py-1.5 text-[11px] shadow-[var(--shadow-hairline)] transition-transform duration-500 ease-[var(--ease-smooth-out)] group-hover:translate-x-1"
             style={{ transitionDelay: `${i * 70}ms` }}
           >
             <span

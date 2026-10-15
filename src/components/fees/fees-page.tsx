@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
+import { SectionHeading } from "@/components/ui/section-heading";
 import { explorerAddressUrl } from "@/lib/web3/blockscout";
 import {
   formatFeeEth,
@@ -21,16 +22,12 @@ export function FeesPage() {
     <div className="min-h-dvh bg-background text-foreground">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 lg:py-20">
-        <p className="text-xs tracking-[0.22em] text-muted-foreground uppercase">
-          Fees & treasury
-        </p>
-        <h1 className="mt-4 font-display text-4xl tracking-tight sm:text-5xl">
-          What Pyre charges
-        </h1>
-        <p className="mt-4 max-w-xl text-base text-muted-foreground">
-          Single burns and revokes stay free besides network gas. Batches and
-          successful sweeps pay the protocol. Stock Tokens are never burned.
-        </p>
+        <SectionHeading
+          as="h1"
+          eyebrow="Fees & treasury"
+          title="What Pyre charges"
+          description="Single burns and revokes stay free besides network gas. Batches and successful sweeps pay the protocol. Stock Tokens are never burned."
+        />
 
         <section className="mt-12 overflow-x-auto">
           <table className="w-full text-left text-sm">

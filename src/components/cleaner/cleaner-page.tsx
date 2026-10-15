@@ -15,10 +15,11 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { cn } from "@/lib/utils";
 import { explorerTxUrl } from "@/lib/web3/blockscout";
-import { formatFeeEth, PROTOCOL_FEE_ID, treasuryIsLive } from "@/lib/web3/fees";
+import { formatFeeEth, PROTOCOL_FEE_ID } from "@/lib/web3/fees";
 import { selectedAction, sweepNetWei } from "@/lib/web3/sweep";
 import type { Mode } from "@/lib/web3/types";
 import {
@@ -255,9 +256,7 @@ export function CleanerPage() {
 
         {status === "idle" && !connected ? (
           <section className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-[var(--shadow-border)]">
-            <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-              Robinhood Chain · 4663
-            </p>
+            <Eyebrow>Robinhood Chain · 4663</Eyebrow>
             <h1 className="text-2xl font-medium tracking-tight">
               Clean spam without touching Stock Tokens.
             </h1>

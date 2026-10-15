@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SectionHeading } from "@/components/ui/section-heading";
 
 export type LegalSection = { title: string; body: ReactNode };
 
@@ -21,8 +22,7 @@ export function LegalPage({
     <div className="min-h-dvh bg-background text-foreground">
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 py-14 sm:px-6 lg:py-20">
-        <p className="text-xs tracking-[0.22em] text-muted-foreground uppercase">{eyebrow}</p>
-        <h1 className="mt-4 font-display text-4xl tracking-tight sm:text-5xl">{title}</h1>
+        <SectionHeading as="h1" eyebrow={eyebrow} title={title} />
         <p className="mt-3 text-sm text-muted-foreground">Last updated {updated}</p>
         <p className="mt-6 max-w-xl text-base text-muted-foreground">{intro}</p>
 
