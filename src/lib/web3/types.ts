@@ -1,4 +1,4 @@
-export type Mode = "safe" | "burn" | "sweep";
+export type Mode = "safe" | "review" | "sweep";
 export type ScanStatus = "idle" | "scanning" | "ready" | "signing" | "done";
 export type AssetKind = "token" | "nft" | "approval";
 export type AssetAction = "burn" | "revoke" | "sweep" | "dust-swap";

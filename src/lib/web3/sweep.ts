@@ -1,5 +1,5 @@
 import { isStockToken, parseDisplayAmount } from "./classify.ts";
-import type { WalletAsset } from "./types.ts";
+import type { Mode, WalletAsset } from "./types.ts";
 
 /** 1.25% of ETH received, inside the 1–1.5% band. */
 export const SWEEP_CUT_BPS = 125n;
@@ -37,7 +37,7 @@ export function withSweepFlags(
   return { ...asset, dust, sweepable };
 }
 
-export function selectedAction(asset: WalletAsset, mode: "safe" | "burn" | "sweep") {
+export function selectedAction(asset: WalletAsset, mode: Mode) {
   if (asset.kind === "approval") return "revoke" as const;
   if (asset.kind === "nft") return "burn" as const;
   if (asset.protected && asset.dust && asset.sweepable) return "dust-swap" as const;
