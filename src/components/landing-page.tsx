@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
 
 const FLOW = [
@@ -76,8 +75,6 @@ const FAQS = [
 ];
 
 export function LandingPage() {
-  const { setOpen } = useWalletCleaner();
-
   return (
     <div id="top" className="min-h-dvh bg-background text-foreground">
       <a
@@ -245,7 +242,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <CtaBanner onConnect={() => setOpen(true)} />
+        <CtaBanner />
       </main>
 
       <SiteFooter />

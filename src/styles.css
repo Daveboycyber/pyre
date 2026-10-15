@@ -238,6 +238,59 @@
     linear-gradient(180deg, #242424, #191919);
 }
 
+.cta-button {
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.5),
+    0 12px 36px -10px rgb(204 255 0 / 0.55);
+  animation: cta-breathe 3.2s ease-in-out infinite;
+}
+
+.cta-button:hover {
+  animation: none;
+  box-shadow:
+    0 0 0 1px rgb(204 255 0 / 0.7),
+    0 18px 48px -10px rgb(204 255 0 / 0.75);
+}
+
+/* A light sheen that sweeps across the button every few seconds. */
+.cta-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 65%
+  );
+  transform: translateX(-120%);
+  animation: cta-sheen 3.2s var(--ease-out) infinite;
+}
+
+@keyframes cta-sheen {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes cta-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(204 255 0 / 0.5),
+      0 12px 36px -10px rgb(204 255 0 / 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(204 255 0 / 0.6),
+      0 14px 44px -8px rgb(204 255 0 / 0.7);
+  }
+}
+
 /* Fade sections in as they scroll into view, where the browser supports it. */
 @supports (animation-timeline: view()) {
   .on-scroll {
@@ -260,6 +313,8 @@
   .feature-dash,
   .marquee-track,
   .lock-click,
+  .cta-button,
+  .cta-button::before,
   .on-scroll {
     animation: none !important;
   }
