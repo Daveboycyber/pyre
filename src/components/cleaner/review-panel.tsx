@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { confirmDialog } from "@/lib/dialogs";
 import { formatFeeEth } from "@/lib/web3/fees";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 import { notify } from "@/lib/notify";
 import { AssetGroup } from "@/components/cleaner/asset-group";
 import { AssetRow } from "@/components/cleaner/asset-row";
@@ -140,8 +141,17 @@ function AssetGroups({
 }
 
 function FeeHint({ feeWei, credits }: Readonly<{ feeWei: bigint; credits: number }>) {
-  if (feeWei > 0n && credits >= 1) return <>One credit will waive the batch fee for this clean.</>;
-  if (feeWei > 0n) return <>A flat batch fee is charged once in ETH before any line runs.</>;
+  if (feeWei > 0n && credits >= 1) {
+    return <>One credit will waive the batch fee for this clean.</>;
+  }
+  if (feeWei > 0n) {
+    return (
+      <>
+        Batch fee: paid in {WIF_FEE_LABEL} when you hold enough $WIF (on-chain transfer to
+        treasury); otherwise ETH. Using the cleaner creates demand for $WIF.
+      </>
+    );
+  }
   return <>One action stays free. Select two or more and a flat batch fee applies.</>;
 }
 
@@ -186,12 +196,11 @@ export function ReviewPanel() {
   const isEmpty = reviewable.length + dust.length + locked.length + dismissedAssets.length === 0;
   const willWaiveFee = summary.feeWei > 0n && credits >= 1;
 
-  // Burns cannot be undone, so every run starts from an explicit confirmation.
   const confirmAndSign = async () => {
     const n = summary.actions;
     let fee = "Free";
     if (willWaiveFee) fee = "Waived (1 credit)";
-    else if (summary.feeWei > 0n) fee = formatFeeEth(summary.feeWei);
+    else if (summary.feeWei > 0n) fee = `${WIF_FEE_LABEL} if held, else ${formatFeeEth(summary.feeWei)}`;
     const ok = await confirmDialog({
       tone: "warning",
       title: `Sign ${n} action${n === 1 ? "" : "s"}?`,
@@ -245,6 +254,7 @@ export function ReviewPanel() {
         actions={summary.actions}
         feeWei={summary.feeWei}
         waived={willWaiveFee}
+        preferWif={!willWaiveFee && summary.feeWei > 0n}
         onSign={() => void confirmAndSign()}
       />
     </section>

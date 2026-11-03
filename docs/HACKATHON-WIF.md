@@ -2,22 +2,12 @@
 
 **Branch:** `hackathon/wif`  
 **Event:** [World is Flat](https://worldisflat.fun/build) (Robinhood Chain)  
-**Rule:** product must use `$WIF` onchain with a flywheel.  
 **Deadline:** submissions close **12 Nov 2026, 17:30 UTC**.
 
 ## Isolation policy
 
-- This branch is a **contest track only**.
-- Do **not** merge into `main` or `phase-2` by default.
-- Production (`main`) stays the original Pyre cleaner without $WIF.
-- Phase 2 Stock Desk continues on `phase-2`.
-
-## Deploy
-
-- Vercel project **pyre** is linked to this repo.
-- Pushes to `hackathon/wif` create **Preview** deployments (production stays on `main`).
-- Use the Preview URL for the hackathon submission demo.
-- Keep that Preview live through the final (~16 Nov 2026).
+- Contest track only — do **not** merge into `main` or `phase-2` by default.
+- Production (`main`) stays the original cleaner without $WIF.
 
 ## $WIF on Robinhood Chain
 
@@ -25,19 +15,31 @@
 0x5173b8eA6923c2d40267890D45C46a3480954773
 ```
 
-## Scope for this branch
+## What shipped (minimal utility)
 
-Minimal real on-chain $WIF utility in the cleaner, for example:
+| Piece | Behavior |
+|-------|----------|
+| `src/lib/web3/wif.ts` | Constants + `payFeeWithWif` (ERC-20 transfer to treasury) |
+| Cleaner fee path | If wallet holds ≥ **50 $WIF**, batch fee is paid **in $WIF** on-chain; else ETH via `PyreBatch` |
+| UI copy | Review / sign bar explain $WIF fee |
 
-1. Pay protocol fee in $WIF (or discounted path), or
-2. Burn $WIF for a free clean / credit, or
-3. Hold/spend $WIF for a desk-style perk
+### Flywheel
 
-Plus: public repo, demo video, live app, real txs.
+Users who clean 2+ items need a batch fee → prefer $WIF when held → on-chain transfer to Pyre treasury → demand for $WIF tied to real cleaner usage.
 
-## Categories to claim
+### Fee amount
 
-- Stock Tokens
-- tools and infra
+Fixed **50 $WIF** (18 decimals) for hackathon simplicity (not oracle-priced). Override later if needed.
 
-Do not use Robinhood name/logo in project branding (event rules).
+## Deploy
+
+Pushes to `hackathon/wif` → Vercel **Preview**. Use that URL for the submission demo. Keep it live through the final (~16 Nov).
+
+## Still needed before submit
+
+1. Smoke-test: hold 50+ $WIF → batch clean → confirm treasury received $WIF tx  
+2. Demo video (scan → multi-select → $WIF fee → burns)  
+3. Public repo link + short write-up of the flywheel  
+4. Categories: **Stock Tokens** + **tools and infra**  
+
+No Robinhood name/logo in project branding (event rules).
