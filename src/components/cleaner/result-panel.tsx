@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { explorerTxUrl } from "@/lib/web3/blockscout";
 import { formatFeeEth } from "@/lib/web3/fees";
 import type { LastClean } from "@/lib/web3/types";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 const HEADER: Record<CleanOutcome, { icon: typeof CircleCheck; tone: string; ring: string }> = {
@@ -53,7 +54,8 @@ function headline(outcome: CleanOutcome, result: LastClean) {
 
 function feeText(result: LastClean) {
   if (result.feeWaived) return "waived";
-  if (result.feeWei === 0n) return "free";
+  if (result.feeWei === 0n && !result.feePaidWithWif) return "free";
+  if (result.feePaidWithWif) return WIF_FEE_LABEL;
   return result.feePaid ? formatFeeEth(result.feeWei) : "not charged";
 }
 
@@ -137,7 +139,7 @@ export function ResultPanel({ result }: { readonly result: LastClean }) {
 
       {result.txs && result.txs.length > 0 ? (
         <div>
-          <p className="text-xs tracking-wide text-muted-foreground uppercase">Sweep receipts</p>
+          <p className="text-xs tracking-wide text-muted-foreground uppercase">Receipts</p>
           <ul className="mt-2 flex flex-col gap-1 text-sm">
             {result.txs.map((tx) => (
               <li key={tx.hash} className="flex justify-between gap-2">

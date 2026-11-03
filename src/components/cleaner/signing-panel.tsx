@@ -5,7 +5,8 @@ import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 /** Live progress while each line is confirmed in the wallet. */
 export function SigningPanel() {
-  const { assets, mode, demo, currentId, feeStatus } = useWalletCleaner();
+  const { assets, mode, demo, currentId, feeStatus, feePaidWithWif } =
+    useWalletCleaner();
 
   // Lines in this run: still selected, or already touched by the signer.
   const lines = assets.filter(
@@ -48,7 +49,11 @@ export function SigningPanel() {
       <ul className="flex flex-col">
         {showFee ? (
           <li>
-            <FeeRow active={currentId === PROTOCOL_FEE_ID} status={feeStatus} />
+            <FeeRow
+              active={currentId === PROTOCOL_FEE_ID}
+              status={feeStatus}
+              paidWithWif={feePaidWithWif}
+            />
           </li>
         ) : null}
         {lines.map((asset) => (
