@@ -1,10 +1,10 @@
 import { Logo } from "@/components/layout/logo";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { NavItemLink } from "@/components/ui/nav-item-link";
-import { LEGAL_NAV, PRODUCT_NAV, type NavItem } from "@/lib/site-nav";
+import { FOOTER_PRODUCT_NAV, LEGAL_NAV, type NavItem } from "@/lib/site-nav";
 
 const COLUMNS: { title: string; items: NavItem[] }[] = [
-  { title: "Product", items: PRODUCT_NAV },
+  { title: "Product", items: FOOTER_PRODUCT_NAV },
   { title: "Legal", items: LEGAL_NAV },
 ];
 
