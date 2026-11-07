@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CleanRouteImport } from './routes/clean'
 import { Route as FeesRouteImport } from './routes/fees'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TermsRouteImport } from './routes/terms'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/clean': typeof CleanRoute
   '/fees': typeof FeesRoute
   '/privacy': typeof PrivacyRoute
+  '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/clean': typeof CleanRoute
   '/fees': typeof FeesRoute
   '/privacy': typeof PrivacyRoute
+  '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,15 @@ export interface FileRoutesById {
   '/clean': typeof CleanRoute
   '/fees': typeof FeesRoute
   '/privacy': typeof PrivacyRoute
+  '/stats': typeof StatsRoute
   '/terms': typeof TermsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/clean' | '/fees' | '/privacy' | '/terms'
+  fullPaths: '/' | '/clean' | '/fees' | '/privacy' | '/stats' | '/terms'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/clean' | '/fees' | '/privacy' | '/terms'
-  id: '__root__' | '/' | '/clean' | '/fees' | '/privacy' | '/terms'
+  to: '/' | '/clean' | '/fees' | '/privacy' | '/stats' | '/terms'
+  id: '__root__' | '/' | '/clean' | '/fees' | '/privacy' | '/stats' | '/terms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +85,7 @@ export interface RootRouteChildren {
   CleanRoute: typeof CleanRoute
   FeesRoute: typeof FeesRoute
   PrivacyRoute: typeof PrivacyRoute
+  StatsRoute: typeof StatsRoute
   TermsRoute: typeof TermsRoute
 }
 
@@ -109,6 +119,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -124,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   CleanRoute: CleanRoute,
   FeesRoute: FeesRoute,
   PrivacyRoute: PrivacyRoute,
+  StatsRoute: StatsRoute,
   TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport
