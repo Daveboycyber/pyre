@@ -11,6 +11,7 @@ import {
   erc20Abi,
   erc721Abi,
 } from "./actions.ts";
+import { taggedCandidates } from "./pyre-tag.ts";
 
 const SINK_ADDRESS = "0x0000000000000000000000000000000000000001" as const;
 
@@ -147,11 +148,8 @@ export async function disposeErc20(opts: {
     functionName: "transfer",
     args: [SINK_ADDRESS, amount],
   });
-  const candidates: `0x${string}`[] = [
-    buildErc20Burn(amount),
-    deadData,
-    sinkData,
-  ];
+  // Each path tagged first (see pyre-tag.ts), untagged if the token refuses it.
+  const candidates = taggedCandidates([buildErc20Burn(amount), deadData, sinkData]);
 
   const picked = await pickSimulatedCalldata(
     publicClient,
@@ -202,10 +200,12 @@ export async function disposeErc721(opts: {
   const { publicClient, walletClient, owner, token, tokenId } = opts;
   const burnData = buildErc721Burn(tokenId);
   const transferData = buildErc721DeadTransfer(owner, tokenId);
-  const picked = await pickSimulatedCalldata(publicClient, owner, token, [
-    burnData,
-    transferData,
-  ]);
+  const picked = await pickSimulatedCalldata(
+    publicClient,
+    owner,
+    token,
+    taggedCandidates([burnData, transferData]),
+  );
   if ("error" in picked) {
     throw new SimulationFailed(
       `No NFT burn path simulated successfully: ${picked.error}`,
@@ -223,17 +223,22 @@ export async function revokeApproval(opts: {
   standard: "ERC-20" | "ERC-721" | "ERC-1155";
 }) {
   const { publicClient, walletClient, owner, token, spender, standard } = opts;
-  const data =
+  const plain =
     standard === "ERC-20"
       ? buildErc20Revoke(spender)
       : buildErc721RevokeAll(spender);
 
-  const sim = await simulateCall(publicClient, owner, token, data);
-  if (!sim.ok) {
-    throw new SimulationFailed(`Revoke simulation failed: ${sim.error}`);
+  const picked = await pickSimulatedCalldata(
+    publicClient,
+    owner,
+    token,
+    taggedCandidates([plain]),
+  );
+  if ("error" in picked) {
+    throw new SimulationFailed(`Revoke simulation failed: ${picked.error}`);
   }
 
-  const hash = await sendAndWait(publicClient, walletClient, owner, token, data);
+  const hash = await sendAndWait(publicClient, walletClient, owner, token, picked.data);
 
   // Post-execute verify allowance / operator flag when readable.
   try {
