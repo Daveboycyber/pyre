@@ -88,6 +88,7 @@ function useWalletCleanerState() {
   const connected = demo || isConnected;
 
   useEffect(() => {
+// eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate ledger when the wallet address changes
     setCredits(getCredits(address));
     setDismissedIds(getDismissedIds(address));
     setShowDismissed(false);
@@ -526,6 +527,7 @@ function useWalletCleanerState() {
   const [previousClean, setPreviousClean] = useState<SavedClean | null>(null);
 
   useEffect(() => {
+// eslint-disable-next-line react-hooks/set-state-in-effect -- load the last clean for this address
     setPreviousClean(demo ? null : loadLastClean(address));
   }, [address, demo]);
 
@@ -536,6 +538,7 @@ function useWalletCleanerState() {
       .filter((a) => a.txStatus === "failed")
       .map((a) => ({ id: a.id, name: a.name, symbol: a.symbol, reason: a.txError }));
     saveLastClean(address, lastClean, failedLines);
+// eslint-disable-next-line react-hooks/set-state-in-effect -- mirror the clean just written to storage
     setPreviousClean(loadLastClean(address));
   }, [demo, status, lastClean, address, assets]);
 
