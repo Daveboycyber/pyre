@@ -82,7 +82,7 @@ export function WalletDialog() {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-// Clear the previous probe before the async scan so the dialog does not flash stale wallets.
+    // Clear the previous probe before the async scan so the dialog does not flash stale wallets.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset before async connector probe
     setProbed(false);
     setError(null);
