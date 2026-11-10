@@ -12,6 +12,7 @@ import { CtaLink } from "@/components/ui/cta-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 
 const FLOW = [
   {
@@ -132,7 +133,7 @@ export function LandingPage() {
 
         <section id="fees" className="scroll-mt-20 border-t border-border">
           <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6">
-            <SectionHeading eyebrow="Pricing" title="Gas in ETH. A flat fee only when you batch." />
+            <SectionHeading eyebrow="Pricing" title="Gas in ETH. A flat $WIF fee only when you batch." />
             <div className="mt-10 overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
@@ -158,9 +159,10 @@ export function LandingPage() {
                   <tr className="border-b border-border transition-colors duration-200 hover:bg-surface/30">
                     <td className="py-4 pr-4">Batch Clean (2+ lines)</td>
                     <td className="py-4 pr-4">
-                      Fee collected first, then each line. One failed line does not unwind the rest.
+                      $WIF fee collected first, then each line. One failed line does not unwind the
+                      rest.
                     </td>
-                    <td className="py-4">{formatFeeEth(PROTOCOL_FEE_WEI)} once + gas</td>
+                    <td className="py-4">{WIF_FEE_LABEL} once + gas</td>
                   </tr>
                   <tr className="transition-colors duration-200 hover:bg-surface/30">
                     <td className="py-4 pr-4">Stock Tokens / stables</td>
@@ -172,8 +174,9 @@ export function LandingPage() {
             </div>
             <p className="mt-6 max-w-xl text-sm text-muted-foreground">
               If the batch fee transaction reverts, Pyre does not start the burns. You never pay the
-              fee for a batch that never runs. The amount is a configurable ETH constant, not a cut
-              of what you hold.
+              fee for a batch that never runs. The fee is a fixed {WIF_FEE_LABEL}, not a cut of what
+              you hold. A wallet holding less than that pays {formatFeeEth(PROTOCOL_FEE_WEI)} for
+              that clean instead.
             </p>
           </div>
         </section>

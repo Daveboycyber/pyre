@@ -17,7 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      # The per-deployment URL sits behind Vercel login and answers 302, so
+      # check the public production domain instead.
+      BASE_URL: ${{ vars.PRODUCTION_URL || 'https://pyre-mu.vercel.app' }}
     steps:
       - name: Pages respond
         run: |

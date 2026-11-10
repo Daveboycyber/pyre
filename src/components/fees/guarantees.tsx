@@ -4,7 +4,7 @@ const ITEMS = [
   {
     icon: ReceiptText,
     title: "Never more than you saw",
-    body: "The fee is read from the contract at sign time. If it is higher than the review screen showed, Pyre stops instead of charging more.",
+    body: "The $WIF batch fee is a fixed 50 $WIF. The ETH fallback is read from the contract at sign time, and if it is higher than the review screen showed, Pyre stops instead of charging more.",
   },
   {
     icon: Ban,
@@ -19,7 +19,7 @@ const ITEMS = [
   {
     icon: BadgeCheck,
     title: "Everything on-chain",
-    body: "Fees go to a public treasury through an open-source contract whose bytecode matches this repo. Anyone can audit every payment.",
+    body: "The $WIF fee is a plain token transfer to a public treasury. The ETH fallback goes through an open-source contract whose bytecode matches this repo. Anyone can audit every payment.",
   },
 ];
 

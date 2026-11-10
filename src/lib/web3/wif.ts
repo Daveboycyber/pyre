@@ -87,7 +87,7 @@ export async function payFeeWithWif(opts: {
               "transfer reverted",
           )
         : "transfer reverted";
-    throw new Error(`$WIF fee simulation failed: ${msg}`);
+    throw new Error(`$WIF fee simulation failed: ${msg}`, { cause: err });
   }
 
   const hash = await walletClient.sendTransaction({

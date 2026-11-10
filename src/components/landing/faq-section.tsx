@@ -4,6 +4,7 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ArrowUpRight, FileText, MessageCircle, Plus, ShieldCheck } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 
 const FAQS: { q: string; a: ReactNode }[] = [
   {
@@ -32,7 +33,11 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "How are fees charged?",
-    a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${formatFeeEth(PROTOCOL_FEE_WEI)} protocol fee, collected once before any burns run. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
+    a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${WIF_FEE_LABEL} protocol fee, sent once to the Pyre treasury before any burns run. Gas is still paid in ETH. If your wallet holds less than ${WIF_FEE_LABEL}, that clean pays ${formatFeeEth(PROTOCOL_FEE_WEI)} instead. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
+  },
+  {
+    q: "Why is the fee in $WIF?",
+    a: `Pyre is built for the World is Flat hackathon, so the batch fee is priced in $WIF. Every batch clean moves ${WIF_FEE_LABEL} on-chain to the public treasury, which you can check on the Fees page. You do not need $WIF for a single burn or revoke.`,
   },
   {
     q: "What are credits?",

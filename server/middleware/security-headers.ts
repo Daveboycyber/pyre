@@ -1,5 +1,6 @@
 /**
- * Baseline security headers for every Nitro response.
+ * Baseline security headers for every page response (the request guard
+ * sets stricter ones on the public API).
  * CSP is intentionally practical for wallet connect / RPC / fonts.
  */
 
@@ -33,11 +34,14 @@ export default async function securityHeadersMiddleware(
   headers.set("X-Frame-Options", "DENY");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set(
-    "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()",
-  );
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   headers.set("Content-Security-Policy", CSP);
+  // HTTPS only for two years, so a hostile network cannot downgrade a visit.
+  headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
+  // Pages opened from Pyre cannot reach back into this tab. "allow-popups"
+  // keeps wallet-connect and sign-in popups working.
+  headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  headers.set("X-Permitted-Cross-Domain-Policies", "none");
 
   return new Response(result.body, {
     status: result.status,

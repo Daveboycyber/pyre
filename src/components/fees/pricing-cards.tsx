@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Flame, Layers } from "lucide-react";
 import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
 import { SWEEP_CUT_BPS } from "@/lib/web3/sweep";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 import { cn } from "@/lib/utils";
 
 const CUT_PCT = (Number(SWEEP_CUT_BPS) / 100).toFixed(2);
@@ -16,12 +17,12 @@ const PLANS = [
   {
     icon: Layers,
     name: "Batch clean",
-    price: formatFeeEth(PROTOCOL_FEE_WEI),
-    unit: "once per clean + gas",
+    price: WIF_FEE_LABEL,
+    unit: "once per clean + gas in ETH",
     points: [
       "Two or more lines in one clean",
-      "Fee is paid first, then each line runs",
-      "One failed line does not undo the rest",
+      "Paid in $WIF first, then each line runs",
+      `Under ${WIF_FEE_LABEL}? This clean pays ${formatFeeEth(PROTOCOL_FEE_WEI)} instead`,
     ],
     featured: true,
   },

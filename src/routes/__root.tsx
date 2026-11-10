@@ -22,7 +22,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Clean a Robinhood Chain wallet: burn junk tokens and NFTs, revoke leftover approvals, and keep Stock Tokens locked. Gas in ETH. Non-custodial.",
+          "Clean a Robinhood Chain wallet: burn junk tokens and NFTs, revoke leftover approvals, and keep Stock Tokens locked. Batch fee in $WIF, gas in ETH. Non-custodial.",
       },
       { name: "theme-color", content: "#CCFF00" },
     ],

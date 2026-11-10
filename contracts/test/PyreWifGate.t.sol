@@ -54,7 +54,7 @@ contract PyreWifGateTest is Test {
         gate.payFee();
 
         assertEq(wif.balanceOf(user), 950 ether);
-        assertEq(wif.balanceOf(PyreWifGate.BURN), 40 ether);
+        assertEq(wif.balanceOf(gate.BURN()), 40 ether);
         assertEq(wif.balanceOf(treasury), 10 ether);
         assertEq(wif.balanceOf(address(gate)), 0);
     }

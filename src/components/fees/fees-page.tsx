@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { CtaLink } from "@/components/ui/cta-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { WIF_ADDRESS } from "@/lib/web3/wif";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
   PYRE_BATCH_ADDRESS,
@@ -24,7 +25,7 @@ export function FeesPage() {
           as="h1"
           eyebrow="Fees & treasury"
           title="Simple, flat and on-chain"
-          description="Single burns and revokes are free besides network gas. A batch pays one flat fee, and a sweep keeps a small cut of the ETH it recovers. That is all."
+          description="Single burns and revokes are free besides network gas. A batch pays one flat fee in $WIF, and a sweep keeps a small cut of the ETH it recovers. That is all."
         />
 
         <PricingCards />
@@ -56,8 +57,13 @@ export function FeesPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <AddressCard
+              title="$WIF token"
+              description="The token the batch fee is paid in, on chain 4663."
+              address={WIF_ADDRESS}
+            />
+            <AddressCard
               title="Treasury"
-              description="Receives batch fees and the sweep cut."
+              description="Receives the $WIF batch fee and the sweep cut."
               address={TREASURY_ADDRESS}
               status={
                 treasuryIsLive()
@@ -68,7 +74,7 @@ export function FeesPage() {
             {pyreBatchIsDeployed() ? (
               <AddressCard
                 title="PyreBatch contract"
-                description="Collects the batch fee and forwards it to the treasury in the same transaction."
+                description="Only used when a wallet holds under 50 $WIF. Collects the ETH fallback fee and forwards it to the treasury in the same transaction."
                 address={PYRE_BATCH_ADDRESS}
                 status={{ label: "Source matches repo", live: true }}
               />

@@ -176,7 +176,7 @@ function ChainVisual() {
         4663
       </p>
       <div className="flex gap-1.5">
-        {["ERC-20", "ERC-721", "ETH gas"].map((t) => (
+        {["ERC-20", "ERC-721", "$WIF fee"].map((t) => (
           <span key={t} className={cn(chip, "font-mono text-muted-foreground")}>
             {t}
           </span>
@@ -223,7 +223,7 @@ const FEATURES: Feature[] = [
   {
     icon: Blocks,
     title: "Built for this chain",
-    body: "Robinhood Chain is an Arbitrum L2. Gas is ETH. Pyre talks ERC-20, ERC-721, and allowances.",
+    body: "Robinhood Chain is an Arbitrum L2. Gas is ETH, the batch fee is $WIF. Pyre talks ERC-20, ERC-721, and allowances.",
     visual: <ChainVisual />,
   },
 ];
