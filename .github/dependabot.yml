@@ -6,6 +6,12 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    ignore:
+      # 1.7 moved generic OAuth callbacks from /oauth2/callback/:id to
+      # /callback/:id and dropped genericOAuthClient. The auth broker only
+      # allows the old path, so 1.7+ needs a planned migration, not a bump.
+      - dependency-name: better-auth
+        versions: [">=1.7.0"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
