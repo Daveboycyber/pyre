@@ -59,9 +59,35 @@ contract PyreWifGateTest is Test {
         assertEq(wif.balanceOf(address(gate)), 0);
     }
 
+    function test_full_burn_when_bps_max() public {
+        gate.setBurnBps(10_000);
+        vm.prank(user);
+        gate.payFee();
+        assertEq(wif.balanceOf(gate.BURN()), 50 ether);
+        assertEq(wif.balanceOf(treasury), 0);
+    }
+
+    function test_min_burn_fifty_fifty() public {
+        gate.setBurnBps(5_000);
+        vm.prank(user);
+        gate.payFee();
+        assertEq(wif.balanceOf(gate.BURN()), 25 ether);
+        assertEq(wif.balanceOf(treasury), 25 ether);
+    }
+
     function test_owner_cannot_zero_the_burn() public {
         vm.expectRevert(PyreWifGate.BurnOutOfRange.selector);
         gate.setBurnBps(4_999);
+    }
+
+    function test_constructor_rejects_zero_wif() public {
+        vm.expectRevert(PyreWifGate.ZeroAddress.selector);
+        new PyreWifGate(address(0), treasury, FEE, BURN_BPS);
+    }
+
+    function test_constructor_rejects_fee_too_high() public {
+        vm.expectRevert(PyreWifGate.FeeTooHigh.selector);
+        new PyreWifGate(address(wif), treasury, 1_001 ether, BURN_BPS);
     }
 
     function test_pause_blocks_pay() public {
@@ -75,5 +101,25 @@ contract PyreWifGateTest is Test {
         vm.prank(user);
         vm.expectRevert(PyreWifGate.NotOwner.selector);
         gate.setFeeAmount(1);
+    }
+
+    function test_two_step_ownership() public {
+        address next = makeAddr("next");
+        gate.transferOwnership(next);
+        assertEq(gate.pendingOwner(), next);
+        assertEq(gate.owner(), address(this));
+        vm.prank(next);
+        gate.acceptOwnership();
+        assertEq(gate.owner(), next);
+        assertEq(gate.pendingOwner(), address(0));
+    }
+
+    function test_insufficient_allowance_reverts() public {
+        address poor = makeAddr("poor");
+        wif.mint(poor, FEE);
+        // no approve
+        vm.prank(poor);
+        vm.expectRevert(PyreWifGate.TransferFailed.selector);
+        gate.payFee();
     }
 }
