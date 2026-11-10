@@ -1,5 +1,6 @@
 import { TxStatusIcon, type TxStatus } from "@/components/cleaner/tx-status-icon";
 import { cn } from "@/lib/utils";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 
 export function FeeRow({
   active,
@@ -10,7 +11,7 @@ export function FeeRow({
     status === "failed"
       ? "Not paid · no burns started"
       : paidWithWif
-        ? "Paid in $WIF · treasury"
+        ? `${WIF_FEE_LABEL} · sent to treasury`
         : "Flat batch fee · treasury";
 
   return (

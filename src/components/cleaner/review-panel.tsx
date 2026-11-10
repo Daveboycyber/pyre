@@ -140,19 +140,35 @@ function AssetGroups({
   );
 }
 
-function FeeHint({ feeWei, credits }: Readonly<{ feeWei: bigint; credits: number }>) {
+function FeeHint({
+  feeWei,
+  credits,
+  canPayWif,
+}: Readonly<{ feeWei: bigint; credits: number; canPayWif: boolean }>) {
   if (feeWei > 0n && credits >= 1) {
     return <>One credit will waive the batch fee for this clean.</>;
+  }
+  if (feeWei > 0n && canPayWif) {
+    return (
+      <>
+        The batch fee is {WIF_FEE_LABEL}, sent once to the Pyre treasury before any line runs. Gas
+        stays in ETH.
+      </>
+    );
   }
   if (feeWei > 0n) {
     return (
       <>
-        Batch fee: paid in {WIF_FEE_LABEL} when you hold enough $WIF (on-chain transfer to
-        treasury); otherwise ETH. Using the cleaner creates demand for $WIF.
+        The batch fee is {WIF_FEE_LABEL}. This wallet holds less than that, so this clean pays{" "}
+        {formatFeeEth(feeWei)} instead. Top up $WIF and rescan to pay in $WIF.
       </>
     );
   }
-  return <>One action stays free. Select two or more and a flat batch fee applies.</>;
+  return (
+    <>
+      One action stays free. Select two or more and a flat {WIF_FEE_LABEL} batch fee applies.
+    </>
+  );
 }
 
 /** The "ready" step: pick a mode, adjust the list, then sign. */
@@ -162,6 +178,7 @@ export function ReviewPanel() {
     mode,
     demo,
     credits,
+    canPayWif,
     dismissedCount,
     showDismissed,
     isDismissed,
@@ -200,7 +217,11 @@ export function ReviewPanel() {
     const n = summary.actions;
     let fee = "Free";
     if (willWaiveFee) fee = "Waived (1 credit)";
-    else if (summary.feeWei > 0n) fee = `${WIF_FEE_LABEL} if held, else ${formatFeeEth(summary.feeWei)}`;
+    else if (summary.feeWei > 0n) {
+      fee = canPayWif
+        ? WIF_FEE_LABEL
+        : `${formatFeeEth(summary.feeWei)} (under ${WIF_FEE_LABEL} held)`;
+    }
     const ok = await confirmDialog({
       tone: "warning",
       title: `Sign ${n} action${n === 1 ? "" : "s"}?`,
@@ -247,14 +268,14 @@ export function ReviewPanel() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        {MODE_HINTS[mode]} <FeeHint feeWei={summary.feeWei} credits={credits} />
+        {MODE_HINTS[mode]} <FeeHint feeWei={summary.feeWei} credits={credits} canPayWif={canPayWif} />
       </p>
 
       <SignBar
         actions={summary.actions}
         feeWei={summary.feeWei}
         waived={willWaiveFee}
-        preferWif={!willWaiveFee && summary.feeWei > 0n}
+        preferWif={!willWaiveFee && summary.feeWei > 0n && canPayWif}
         onSign={() => void confirmAndSign()}
       />
     </section>

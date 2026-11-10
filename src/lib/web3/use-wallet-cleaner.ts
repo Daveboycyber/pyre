@@ -44,6 +44,7 @@ import {
   canPayFeeWithWif,
   payFeeWithWif,
   readWifBalance,
+  WIF_FEE_AMOUNT,
   WIF_FEE_LABEL,
 } from "./wif.ts";
 import { attachLiveQuotes } from "./quotes.ts";
@@ -86,6 +87,8 @@ function useWalletCleanerState() {
   >("idle");
   /** True once this run's batch fee was paid in $WIF (live + result UI). */
   const [feePaidWithWif, setFeePaidWithWif] = useState(false);
+  /** $WIF balance from the last scan; null until read. Drives the fee copy. */
+  const [wifBalance, setWifBalance] = useState<bigint | null>(null);
   const [credits, setCredits] = useState(0);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
   const [showDismissed, setShowDismissed] = useState(false);
@@ -117,6 +120,7 @@ function useWalletCleanerState() {
     setFeePaidWithWif(false);
     if (demo) {
       await sleep(1100);
+      setWifBalance(WIF_FEE_AMOUNT);
       setAssets(cloneDemo("safe"));
       setModeState("safe");
       setStatus("ready");
@@ -126,6 +130,9 @@ function useWalletCleanerState() {
     try {
       await ensureRobinhood();
       await ensureStockRegistry();
+      if (publicClient) {
+        void readWifBalance(publicClient, address).then(setWifBalance);
+      }
       const built = await buildAssetsForAddress(address, publicClient);
       const dismissed = pruneDismissedToHeld(
         address,
@@ -179,6 +186,7 @@ function useWalletCleanerState() {
     setCurrentId(null);
     setFeeStatus("idle");
     setFeePaidWithWif(false);
+    setWifBalance(WIF_FEE_AMOUNT);
     setStatus("scanning");
     window.setTimeout(() => {
       setAssets(cloneDemo("safe"));
@@ -207,6 +215,7 @@ function useWalletCleanerState() {
     setCurrentId(null);
     setFeeStatus("idle");
     setFeePaidWithWif(false);
+    setWifBalance(null);
   }, [demo, disconnectAsync]);
 
   const setMode = useCallback((next: Mode) => {
@@ -631,6 +640,8 @@ function useWalletCleanerState() {
     currentId,
     feeStatus,
     feePaidWithWif,
+    /** True when the scanned wallet holds enough $WIF for the batch fee. */
+    canPayWif: wifBalance !== null && canPayFeeWithWif(wifBalance),
     credits,
     dismissedCount: dismissedIds.size,
     isDismissed: (id: string) => dismissedIds.has(id),

@@ -1,4 +1,5 @@
-import { formatFeeEth, PROTOCOL_FEE_WEI } from "@/lib/web3/fees";
+import { formatFeeEth } from "@/lib/web3/fees";
+import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 import { sweepCutWei, sweepNetWei } from "@/lib/web3/sweep";
 
 // A worked example, computed with the same helpers the cleaner uses.
@@ -22,10 +23,10 @@ export function FeeExample() {
           5 burns and 2 approval revokes in one clean.
         </p>
         <dl className="mt-4 divide-y divide-border text-sm">
-          <Line label="Batch fee (once)" value={formatFeeEth(PROTOCOL_FEE_WEI)} />
-          <Line label="Per-line fee" value="0 ETH" />
-          <Line label="Network gas" value="paid to the chain" />
-          <Line label="Pyre takes" value={formatFeeEth(PROTOCOL_FEE_WEI)} strong />
+          <Line label="Batch fee (once)" value={WIF_FEE_LABEL} />
+          <Line label="Per-line fee" value="None" />
+          <Line label="Network gas" value="ETH, paid to the chain" />
+          <Line label="Pyre takes" value={WIF_FEE_LABEL} strong />
         </dl>
       </div>
       <div className="rounded-2xl bg-card/60 p-6 shadow-[var(--shadow-border)]">
@@ -36,7 +37,7 @@ export function FeeExample() {
         <dl className="mt-4 divide-y divide-border text-sm">
           <Line label="ETH from the swap" value={formatFeeEth(SWEEP_QUOTE_WEI)} />
           <Line label="Sweep cut" value={formatFeeEth(sweepCutWei(SWEEP_QUOTE_WEI))} />
-          <Line label="Network gas" value="paid to the chain" />
+          <Line label="Network gas" value="ETH, paid to the chain" />
           <Line label="You receive" value={formatFeeEth(sweepNetWei(SWEEP_QUOTE_WEI))} strong />
         </dl>
       </div>
