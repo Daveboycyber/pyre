@@ -21,10 +21,21 @@ export const WIF_ADDRESS = "0x5173b8eA6923c2d40267890D45C46a3480954773" as const
 /** Live PyreWifGate (hackathon/wif, chain 4663). */
 export const WIF_GATE_ADDRESS = "0x4A5442c781F4ec7f38c080338758f4193287E29E" as const;
 
-/** Batch fee shown to users, in $WIF (18 decimals). The most the app will pay. */
+/**
+ * Gate constructor default, in $WIF (18 decimals). Only for static pages and
+ * demo mode: the cleaner reads the live fee from the gate (`readWifFeeAmount`).
+ */
 export const WIF_FEE_AMOUNT = 50n * 10n ** 18n; // 50 $WIF
 
-export const WIF_FEE_LABEL = "50 $WIF";
+/** Whole-token label, e.g. `50 $WIF` or `12.5 $WIF`. */
+export function formatWif(amount: bigint): string {
+  const whole = amount / 10n ** 18n;
+  const frac = (amount % 10n ** 18n).toString().padStart(18, "0").slice(0, 4).replace(/0+$/, "");
+  return `${whole}${frac ? `.${frac}` : ""} $WIF`;
+}
+
+/** Static label for marketing pages and demo mode. */
+export const WIF_FEE_LABEL = formatWif(WIF_FEE_AMOUNT);
 
 const pyreWifGateAbi = [
   {
@@ -101,16 +112,16 @@ export async function readWifFeeAmount(publicClient: PublicClient): Promise<bigi
   })) as bigint;
 }
 
-/** Stop when the gate fee is above what the user was shown. */
-function assertFeeWithinQuote(feeAmount: bigint, maxFee: bigint) {
-  if (feeAmount > maxFee) {
+/** Stop when the gate fee rose above what the user was shown at review. */
+function assertFeeWithinQuote(feeAmount: bigint, shownFee: bigint) {
+  if (feeAmount > shownFee) {
     throw new WifFeeError(
-      `The $WIF batch fee changed to ${feeAmount / 10n ** 18n} $WIF, above the ${WIF_FEE_LABEL} shown. Nothing was charged. Rescan and try again.`,
+      `The $WIF batch fee changed from ${formatWif(shownFee)} to ${formatWif(feeAmount)} after you reviewed it. Nothing was charged. Rescan to see the new fee.`,
     );
   }
 }
 
-export function canPayFeeWithWif(balance: bigint, feeAmount = WIF_FEE_AMOUNT): boolean {
+export function canPayFeeWithWif(balance: bigint, feeAmount: bigint): boolean {
   return balance >= feeAmount;
 }
 
@@ -168,8 +179,10 @@ function errorText(err: unknown, fallback: string): string {
  * Pay the batch fee through PyreWifGate: approve if needed, then payFee().
  * Gate burns the burnBps share and forwards the rest to treasury.
  *
- * `maxFee` is the fee the user was shown. A higher on-chain fee throws
- * WifFeeError before anything is signed. Only exact approvals are made, so a
+ * The gate's `feeAmount` is the fee. `shownFee` is that same on-chain value as
+ * read at scan time and shown in the review UI. If the owner raised it since,
+ * this throws WifFeeError before anything is signed, like `resolveBatchFee`
+ * does for ETH. Only exact approvals are made, so a
  * fee raised between approve and payFee makes payFee revert rather than
  * overcharge. Use `wifFeeFallback` on the thrown error before trying ETH.
  */
@@ -177,15 +190,15 @@ export async function payFeeWithWif(opts: {
   publicClient: PublicClient;
   walletClient: WalletClient;
   owner: `0x${string}`;
-  maxFee?: bigint;
+  shownFee: bigint;
 }): Promise<`0x${string}`> {
-  const { publicClient, walletClient, owner, maxFee = WIF_FEE_AMOUNT } = opts;
+  const { publicClient, walletClient, owner, shownFee } = opts;
 
   const feeAmount = await readWifFeeAmount(publicClient);
-  assertFeeWithinQuote(feeAmount, maxFee);
+  assertFeeWithinQuote(feeAmount, shownFee);
   const balance = await readWifBalance(publicClient, owner);
   if (!canPayFeeWithWif(balance, feeAmount)) {
-    throw new Error(`Need at least ${WIF_FEE_LABEL} to pay the batch fee in $WIF`);
+    throw new Error(`Need at least ${formatWif(feeAmount)} to pay the batch fee in $WIF`);
   }
 
   await ensureWifAllowance({
@@ -196,7 +209,7 @@ export async function payFeeWithWif(opts: {
   });
 
   // The fee is owner-settable. Re-read after the approve wait, right before payFee.
-  assertFeeWithinQuote(await readWifFeeAmount(publicClient), maxFee);
+  assertFeeWithinQuote(await readWifFeeAmount(publicClient), shownFee);
 
   const data = encodeFunctionData({
     abi: pyreWifGateAbi,

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import type { PublicClient, WalletClient } from "viem";
 import { actionErrorMessage } from "./tx-error.ts";
 import {
+  formatWif,
   payFeeWithWif,
   readWifFeeAmount,
   WIF_FEE_AMOUNT,
@@ -47,7 +48,7 @@ function clients(f: Fake = {}) {
 
 test("payFeeWithWif approves the exact fee then calls the gate", async () => {
   const c = clients();
-  const hash = await payFeeWithWif({ ...c, owner: OWNER });
+  const hash = await payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT });
   assert.equal(hash, HASH);
   assert.equal(c.sent.length, 2);
   assert.equal(c.sent[1], WIF_GATE_ADDRESS);
@@ -55,16 +56,16 @@ test("payFeeWithWif approves the exact fee then calls the gate", async () => {
 
 test("payFeeWithWif skips approve when allowance already covers the fee", async () => {
   const c = clients({ allowance: WIF_FEE_AMOUNT });
-  await payFeeWithWif({ ...c, owner: OWNER });
+  await payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT });
   assert.deepEqual(c.sent, [WIF_GATE_ADDRESS]);
 });
 
 test("a gate fee above the shown fee stops before anything is signed", async () => {
   const c = clients({ fees: [1_000n * WIF], allowance: 2n ** 256n - 1n });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), (err) => {
+  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }), (err) => {
     assert.ok(err instanceof WifFeeError);
     assert.equal(wifFeeFallback(err), "stop");
-    assert.match(actionErrorMessage(err), /changed to 1000 \$WIF/);
+    assert.match(actionErrorMessage(err), /changed from 50 \$WIF to 1000 \$WIF/);
     return true;
   });
   assert.equal(c.sent.length, 0);
@@ -72,15 +73,41 @@ test("a gate fee above the shown fee stops before anything is signed", async () 
 
 test("a fee raised during the approve wait stops before payFee", async () => {
   const c = clients({ fees: [WIF_FEE_AMOUNT, 60n * WIF] });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), WifFeeError);
+  await assert.rejects(
+    payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }),
+    WifFeeError,
+  );
   assert.equal(c.sent.length, 1, "only the approve was sent");
   assert.notEqual(c.sent[0], WIF_GATE_ADDRESS);
 });
 
 test("a lower gate fee is fine", async () => {
   const c = clients({ fees: [10n * WIF], allowance: 10n * WIF });
-  await payFeeWithWif({ ...c, owner: OWNER });
+  await payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT });
   assert.deepEqual(c.sent, [WIF_GATE_ADDRESS]);
+});
+
+test("pays the live gate fee shown at review, not the static 50", async () => {
+  const c = clients({ fees: [120n * WIF], allowance: 0n });
+  const approvals: bigint[] = [];
+  const wallet = c.walletClient as unknown as {
+    sendTransaction: (tx: { to: `0x${string}`; data: `0x${string}` }) => Promise<`0x${string}`>;
+  };
+  const send = wallet.sendTransaction;
+  wallet.sendTransaction = async (tx) => {
+    if (tx.to !== WIF_GATE_ADDRESS) approvals.push(BigInt(`0x${tx.data.slice(-64)}`));
+    return send(tx);
+  };
+  await payFeeWithWif({ ...c, owner: OWNER, shownFee: 120n * WIF });
+  assert.deepEqual(approvals, [120n * WIF], "approves exactly the live fee");
+  assert.equal(c.sent[1], WIF_GATE_ADDRESS);
+});
+
+test("formatWif renders whole and fractional amounts", () => {
+  assert.equal(formatWif(50n * WIF), "50 $WIF");
+  assert.equal(formatWif(1_000n * WIF), "1000 $WIF");
+  assert.equal(formatWif((125n * WIF) / 10n), "12.5 $WIF");
+  assert.equal(formatWif(0n), "0 $WIF");
 });
 
 test("a sent payFee with no receipt never falls back to ETH", async () => {
@@ -90,7 +117,7 @@ test("a sent payFee with no receipt never falls back to ETH", async () => {
       throw new Error("timed out waiting for receipt");
     },
   });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), (err) => {
+  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }), (err) => {
     assert.equal(wifFeeFallback(err), "stop");
     assert.match((err as Error).message, /sent but not confirmed/);
     return true;
@@ -99,7 +126,7 @@ test("a sent payFee with no receipt never falls back to ETH", async () => {
 
 test("a mined payFee revert charged nothing, so ETH fallback is allowed", async () => {
   const c = clients({ allowance: WIF_FEE_AMOUNT, receipt: async () => ({ status: "reverted" }) });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), (err) => {
+  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }), (err) => {
     assert.equal(wifFeeFallback(err), "eth");
     return true;
   });
@@ -112,7 +139,7 @@ test("declining in the wallet stops the clean instead of prompting for ETH", asy
       throw rejected;
     },
   });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), (err) => {
+  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }), (err) => {
     assert.equal(wifFeeFallback(err), "stop");
     return true;
   });
@@ -124,7 +151,7 @@ test("declining in the wallet stops the clean instead of prompting for ETH", asy
 
 test("low balance and read failures fall back to ETH", async () => {
   const c = clients({ balance: 1n * WIF });
-  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER }), (err) => {
+  await assert.rejects(payFeeWithWif({ ...c, owner: OWNER, shownFee: WIF_FEE_AMOUNT }), (err) => {
     assert.equal(wifFeeFallback(err), "eth");
     return true;
   });

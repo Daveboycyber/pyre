@@ -42,8 +42,10 @@ import {
 import { PROTOCOL_FEE_ID, PROTOCOL_FEE_WEI, protocolFeeWei, treasuryIsLive } from "./fees.ts";
 import {
   canPayFeeWithWif,
+  formatWif,
   payFeeWithWif,
   readWifBalance,
+  readWifFeeAmount,
   WIF_FEE_AMOUNT,
   WIF_FEE_LABEL,
   wifFeeFallback,
@@ -90,6 +92,8 @@ function useWalletCleanerState() {
   const [feePaidWithWif, setFeePaidWithWif] = useState(false);
   /** $WIF balance from the last scan; null until read. Drives the fee copy. */
   const [wifBalance, setWifBalance] = useState<bigint | null>(null);
+  /** Live gate `feeAmount` from the last scan; null until read or if the read failed. */
+  const [wifFee, setWifFee] = useState<bigint | null>(null);
   const [credits, setCredits] = useState(0);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
   const [showDismissed, setShowDismissed] = useState(false);
@@ -123,6 +127,7 @@ function useWalletCleanerState() {
     if (demo) {
       await sleep(1100);
       setWifBalance(WIF_FEE_AMOUNT);
+      setWifFee(WIF_FEE_AMOUNT);
       setAssets(cloneDemo("safe"));
       setModeState("safe");
       setStatus("ready");
@@ -134,6 +139,7 @@ function useWalletCleanerState() {
       await ensureStockRegistry();
       if (publicClient) {
         void readWifBalance(publicClient, address).then(setWifBalance);
+        void readWifFeeAmount(publicClient).then(setWifFee, () => setWifFee(null));
       }
       const built = await buildAssetsForAddress(address, publicClient);
       const dismissed = pruneDismissedToHeld(
@@ -189,6 +195,7 @@ function useWalletCleanerState() {
     setFeeStatus("idle");
     setFeePaidWithWif(false);
     setWifBalance(WIF_FEE_AMOUNT);
+    setWifFee(WIF_FEE_AMOUNT);
     setStatus("scanning");
     window.setTimeout(() => {
       setAssets(cloneDemo("safe"));
@@ -218,6 +225,7 @@ function useWalletCleanerState() {
     setFeeStatus("idle");
     setFeePaidWithWif(false);
     setWifBalance(null);
+    setWifFee(null);
   }, [demo, disconnectAsync]);
 
   const setMode = useCallback((next: Mode) => {
@@ -297,6 +305,7 @@ function useWalletCleanerState() {
     }
 
     let feePaidWithWifLocal = false;
+    let feeWifLabel: string | undefined;
 
     if (feeWei > 0n) {
       try {
@@ -304,6 +313,7 @@ function useWalletCleanerState() {
           await sleep(700);
           feePaid = true;
           feePaidWithWifLocal = true;
+          feeWifLabel = WIF_FEE_LABEL;
           setFeePaidWithWif(true);
           setFeeStatus("done");
         } else if (!treasuryIsLive()) {
@@ -314,17 +324,19 @@ function useWalletCleanerState() {
           }
 
           const wifBal = await readWifBalance(publicClient, address);
-          if (canPayFeeWithWif(wifBal)) {
+          if (wifFee !== null && canPayFeeWithWif(wifBal, wifFee)) {
             try {
               const wifHash = await payFeeWithWif({
                 publicClient,
                 walletClient,
                 owner: address,
+                shownFee: wifFee,
               });
               feePaid = true;
               feePaidWithWifLocal = true;
+              feeWifLabel = formatWif(wifFee);
               setFeePaidWithWif(true);
-              txs.push({ label: `$WIF fee (${WIF_FEE_LABEL})`, hash: wifHash });
+              txs.push({ label: `$WIF fee (${feeWifLabel})`, hash: wifHash });
               setFeeStatus("done");
             } catch (wifErr) {
               if (wifFeeFallback(wifErr) === "stop") throw wifErr;
@@ -505,6 +517,7 @@ function useWalletCleanerState() {
       feePaid: feeWaived ? true : feeWei === 0n ? false : feePaid,
       feeWaived,
       feePaidWithWif: feePaidWithWifLocal || undefined,
+      feeWifLabel,
       recoveredWei,
       cutWei,
       creditsEarned: earned > 0 ? earned : undefined,
@@ -512,7 +525,7 @@ function useWalletCleanerState() {
       txs,
     });
     setStatus("done");
-  }, [assets, walletClient, address, publicClient, demo, mode, ensureRobinhood]);
+  }, [assets, walletClient, address, publicClient, demo, mode, ensureRobinhood, wifFee]);
 
   const clean = useCallback(async () => {
     try {
@@ -645,8 +658,10 @@ function useWalletCleanerState() {
     currentId,
     feeStatus,
     feePaidWithWif,
-    /** True when the scanned wallet holds enough $WIF for the batch fee. */
-    canPayWif: wifBalance !== null && canPayFeeWithWif(wifBalance),
+    /** True when the scanned wallet holds enough $WIF for the live gate fee. */
+    canPayWif: wifBalance !== null && wifFee !== null && canPayFeeWithWif(wifBalance, wifFee),
+    /** Live gate fee as a label; the static default until the first read. */
+    wifFeeLabel: wifFee !== null ? formatWif(wifFee) : WIF_FEE_LABEL,
     credits,
     dismissedCount: dismissedIds.size,
     isDismissed: (id: string) => dismissedIds.has(id),
