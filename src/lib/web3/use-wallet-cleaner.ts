@@ -46,6 +46,7 @@ import {
   readWifBalance,
   WIF_FEE_AMOUNT,
   WIF_FEE_LABEL,
+  wifFeeFallback,
 } from "./wif.ts";
 import { attachLiveQuotes } from "./quotes.ts";
 import {
@@ -326,6 +327,7 @@ function useWalletCleanerState() {
               txs.push({ label: `$WIF fee (${WIF_FEE_LABEL})`, hash: wifHash });
               setFeeStatus("done");
             } catch (wifErr) {
+              if (wifFeeFallback(wifErr) === "stop") throw wifErr;
               console.warn("[pyre] $WIF fee failed, falling back to ETH", wifErr);
             }
           }

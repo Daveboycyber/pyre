@@ -45,6 +45,7 @@ export function actionErrorMessage(err: unknown): string {
       "This action would fail on-chain — skipped before wallet prompt"
     );
   }
+  if (rec.name === "WifFeeError" && rec.message) return rec.message;
   if (rec.code === 4001) return "Signature declined in wallet";
   const text = rec.shortMessage || rec.message || "Transaction failed";
   for (const [re, message] of TX_RULES) {
