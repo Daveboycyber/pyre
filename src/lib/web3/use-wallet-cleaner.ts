@@ -17,6 +17,7 @@ import {
   useWalletClient,
 } from "wagmi";
 import { robinhoodChain } from "./chain.ts";
+import { HAD_WALLET_SESSION_AT_LOAD } from "./config.ts";
 import { ensureStockRegistry } from "./stock-tokens.ts";
 import { disposeErc20, disposeErc721, revokeApproval } from "./execute.ts";
 import { actionErrorMessage, scanErrorMessage } from "./tx-error.ts";
@@ -63,14 +64,17 @@ import {
   applyMode,
   buildAssetsForAddress,
   cloneDemo,
+  shortAddress,
   sleep,
 } from "./use-wallet-cleaner-lib.ts";
 
 export type { AssetKind, LastClean, Mode, ScanStatus, WalletAsset } from "./types.ts";
 export { estimate, shortAddress } from "./use-wallet-cleaner-lib.ts";
 
+const RESTORE_WINDOW_MS = 4000;
+
 function useWalletCleanerState() {
-  const { address: wagmiAddress, isConnected, chainId } = useAccount();
+  const { address: wagmiAddress, isConnected, isReconnecting, chainId } = useAccount();
   const { connectors, connectAsync, isPending: connecting } = useConnect();
   const { disconnectAsync } = useDisconnect();
   const { switchChainAsync } = useSwitchChain();
@@ -98,6 +102,9 @@ function useWalletCleanerState() {
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => new Set());
   const [showDismissed, setShowDismissed] = useState(false);
   const showDismissedRef = useRef(false);
+  /** False on the server and the first client paint; see the restore window below. */
+  const [mounted, setMounted] = useState(false);
+  const [restoreWindow, setRestoreWindow] = useState(HAD_WALLET_SESSION_AT_LOAD);
   const clearedIds = useRef(new Set<string>());
 
   const address = demo ? DEMO_ADDRESS : wagmiAddress;
@@ -204,8 +211,28 @@ function useWalletCleanerState() {
     }, 1100);
   }, []);
 
+  /** Clears everything tied to the current wallet session. */
+  const resetSession = useCallback(() => {
+    clearedIds.current.clear();
+    setAssets([]);
+    setLastClean(null);
+    setScanError(null);
+    setStatus("idle");
+    setModeState("safe");
+    setCurrentId(null);
+    setFeeStatus("idle");
+    setFeePaidWithWif(false);
+    setWifBalance(null);
+    setWifFee(null);
+  }, []);
+
+  /** Set while the user disconnects from Pyre, so the wallet-side notice stays quiet. */
+  const userDisconnect = useRef(false);
+
   const disconnect = useCallback(async () => {
+    setRestoreWindow(false);
     if (!demo) {
+      userDisconnect.current = true;
       try {
         await disconnectAsync();
       } catch (err) {
@@ -216,17 +243,8 @@ function useWalletCleanerState() {
       }
     }
     setDemo(false);
-    clearedIds.current.clear();
-    setAssets([]);
-    setLastClean(null);
-    setStatus("idle");
-    setModeState("safe");
-    setCurrentId(null);
-    setFeeStatus("idle");
-    setFeePaidWithWif(false);
-    setWifBalance(null);
-    setWifFee(null);
-  }, [demo, disconnectAsync]);
+    resetSession();
+  }, [demo, disconnectAsync, resetSession]);
 
   const setMode = useCallback((next: Mode) => {
     setModeState(next);
@@ -604,19 +622,53 @@ function useWalletCleanerState() {
     setPreviousClean(null);
   }, []);
 
-  const wasConnected = useRef(false);
+  // Before the first paint we cannot know whether a wallet will be restored (the page is
+  // server-rendered), so the wallet UI starts "unknown". If a wallet was connected when the
+  // page loaded, show "Reconnecting…" until it is back, for at most RESTORE_WINDOW_MS:
+  // wagmi's first attempt can fail before wallets announce themselves and succeed a moment later.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- client-only: wallet state is known after mount
+    setMounted(true);
+    if (!HAD_WALLET_SESSION_AT_LOAD) return;
+    const timeout = window.setTimeout(() => setRestoreWindow(false), RESTORE_WINDOW_MS);
+    return () => window.clearTimeout(timeout);
+  }, []);
+  // Once the wallet is back and stays connected, the window has done its job.
+  useEffect(() => {
+    if (!restoreWindow || !isConnected) return;
+    const settle = window.setTimeout(() => setRestoreWindow(false), 1000);
+    return () => window.clearTimeout(settle);
+  }, [restoreWindow, isConnected]);
+
+  // Follow the wallet itself: connect (incl. the silent reconnect on load), account
+  // switches and disconnects made inside the wallet app.
+  const sessionAddress = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (demo) return;
-    if (isConnected && !wasConnected.current) {
-      wasConnected.current = true;
+    if (isConnected && wagmiAddress) {
+      const previous = sessionAddress.current;
+      if (previous === wagmiAddress) return;
+      sessionAddress.current = wagmiAddress;
+      if (previous) {
+        // Never keep one account's tokens on screen for another account to sign.
+        resetSession();
+        notify.info(`Switched to ${shortAddress(wagmiAddress)}`, {
+          description: "Rescanning this wallet.",
+        });
+      }
       void runScan();
-    } else if (!isConnected && wasConnected.current) {
-      wasConnected.current = false;
-      setAssets([]);
-      setStatus("idle");
-      setLastClean(null);
+    } else if (!isConnected && !isReconnecting && sessionAddress.current) {
+      sessionAddress.current = undefined;
+      setRestoreWindow(false); // a real disconnect, not a restore in progress
+      resetSession();
+      if (!userDisconnect.current) {
+        notify.info("Wallet disconnected", {
+          description: "Reconnect any time with Connect wallet.",
+        });
+      }
+      userDisconnect.current = false;
     }
-  }, [isConnected, runScan, demo]);
+  }, [isConnected, isReconnecting, wagmiAddress, runScan, demo, resetSession]);
 
   const dismiss = useCallback(
     (assetId: string) => {
@@ -648,6 +700,10 @@ function useWalletCleanerState() {
     setOpen,
     connected,
     connecting,
+    /** A saved wallet is reconnecting: show a placeholder, not "Connect wallet". */
+    reconnecting: !demo && !isConnected && mounted && (isReconnecting || restoreWindow),
+    /** Not yet known on the client whether a wallet will be restored (first paint). */
+    walletUnknown: !demo && !isConnected && !mounted,
     demo,
     address,
     status,

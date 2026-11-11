@@ -4,14 +4,13 @@ import { LastRunNotice } from "@/components/cleaner/last-run-notice";
 import { Notice } from "@/components/cleaner/notice";
 import { ResultPanel } from "@/components/cleaner/result-panel";
 import { ReviewPanel } from "@/components/cleaner/review-panel";
-import { ScanningCard } from "@/components/cleaner/scanning-card";
+import { ReconnectingCard, ScanningCard } from "@/components/cleaner/scanning-card";
 import { SigningPanel } from "@/components/cleaner/signing-panel";
 import { Stepper } from "@/components/cleaner/stepper";
 import { stepIndex } from "@/components/cleaner/steps";
 import { useCleanToasts } from "@/components/cleaner/use-clean-toasts";
 import { SiteHeader } from "@/components/layout/site-header";
 import { Button } from "@/components/ui/button";
-import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 export function CleanerPage() {
@@ -22,6 +21,8 @@ export function CleanerPage() {
     lastClean,
     scanError,
     previousClean,
+    reconnecting,
+    walletUnknown,
     setOpen,
     enterDemo,
     runScan,
@@ -36,7 +37,8 @@ export function CleanerPage() {
         <Stepper current={stepIndex(status, connected)} />
         {demo ? <DemoBanner /> : null}
 
-        {status === "idle" && !connected ? (
+        {status === "idle" && !connected && reconnecting ? <ReconnectingCard /> : null}
+        {status === "idle" && !connected && !reconnecting && !walletUnknown ? (
           <ConnectCard onConnect={() => setOpen(true)} onDemo={enterDemo} />
         ) : null}
 
@@ -63,8 +65,6 @@ export function CleanerPage() {
         {status === "ready" ? <ReviewPanel /> : null}
         {status === "signing" ? <SigningPanel /> : null}
         {status === "done" && lastClean ? <ResultPanel result={lastClean} /> : null}
-
-        <WalletDialog />
       </main>
     </div>
   );

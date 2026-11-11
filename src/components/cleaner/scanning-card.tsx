@@ -35,3 +35,16 @@ export function ScanningCard() {
     </section>
   );
 }
+
+/** Shown on load while a saved wallet reconnects, instead of the connect card. */
+export function ReconnectingCard() {
+  return (
+    <section
+      aria-busy="true"
+      className="flex items-center gap-2 rounded-2xl bg-card p-5 text-sm shadow-[var(--shadow-border)]"
+    >
+      <LoaderCircle className="size-4 animate-spin text-primary" />
+      Reconnecting your wallet…
+    </section>
+  );
+}

@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Copy, Play, Wallet } from "lucide-react";
+import { ChevronRight, Copy, LoaderCircle, Play, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Connector } from "wagmi";
 import {
@@ -15,6 +15,7 @@ import {
   isMobileBrowser,
   mobileWalletLinks,
 } from "@/lib/web3/mobile-wallets";
+import { useRecentConnector } from "@/lib/web3/use-recent-connector";
 import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 import { walletConnectEnabled } from "@/lib/web3/config";
 import { connectErrorMessage } from "@/lib/web3/tx-error";
@@ -24,7 +25,7 @@ function walletNameKey(name: string) {
 }
 
 /** Drop wallets with no provider, and the duplicate plain-icon copies. */
-async function availableConnectors(connectors: readonly Connector[]) {
+async function availableConnectors(connectors: readonly Connector[], recentId?: string) {
   const found: { connector: Connector; provider: unknown }[] = [];
   for (const connector of connectors) {
     if (connector.type === "walletConnect") {
@@ -40,13 +41,10 @@ async function availableConnectors(connectors: readonly Connector[]) {
     }
   }
 
-  // WalletConnect first, then connectors that have a real icon.
-  found.sort((a, b) => {
-    const aWc = a.connector.type === "walletConnect" ? 0 : 1;
-    const bWc = b.connector.type === "walletConnect" ? 0 : 1;
-    if (aWc !== bWc) return aWc - bWc;
-    return Number(Boolean(b.connector.icon)) - Number(Boolean(a.connector.icon));
-  });
+  // Last-used wallet first, then installed wallets with a real icon, WalletConnect last.
+  const rank = (c: Connector) =>
+    c.id === recentId ? 0 : c.type === "walletConnect" ? 3 : c.icon ? 1 : 2;
+  found.sort((a, b) => rank(a.connector) - rank(b.connector));
 
   const seenProviders = new Set<unknown>();
   const seenNames = new Set<string>();
@@ -70,6 +68,7 @@ async function availableConnectors(connectors: readonly Connector[]) {
 
 export function WalletDialog() {
   const { open, setOpen, connect, connectors, enterDemo } = useWalletCleaner();
+  const recent = useRecentConnector();
   const navigate = useNavigate();
   const [ready, setReady] = useState<Connector[]>([]);
   const [probed, setProbed] = useState(false);
@@ -86,7 +85,7 @@ export function WalletDialog() {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reset before async connector probe
     setProbed(false);
     setError(null);
-    void availableConnectors(connectors).then((list) => {
+    void availableConnectors(connectors, recent?.id).then((list) => {
       if (cancelled) return;
       setReady(list);
       setProbed(true);
@@ -94,7 +93,7 @@ export function WalletDialog() {
     return () => {
       cancelled = true;
     };
-  }, [open, connectors]);
+  }, [open, connectors, recent?.id]);
 
   const injectedReady = ready.filter((c) => c.type !== "walletConnect");
   const onlyWalletConnect =
@@ -155,10 +154,15 @@ export function WalletDialog() {
                     )}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-sm font-medium">
+                    <span className="flex items-center gap-2 text-sm font-medium">
                       {connector.type === "walletConnect"
                         ? "WalletConnect"
                         : connector.name}
+                      {connector.id === recent?.id ? (
+                        <span className="rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-medium text-primary">
+                          Last used
+                        </span>
+                      ) : null}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {pendingId === connector.uid
@@ -170,7 +174,11 @@ export function WalletDialog() {
                           : "Installed in this browser"}
                     </span>
                   </span>
-                  <ChevronRight className="size-4 text-muted-foreground" />
+                  {pendingId === connector.uid ? (
+                    <LoaderCircle className="size-4 animate-spin text-primary" />
+                  ) : (
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  )}
                 </button>
               </li>
             ))}
