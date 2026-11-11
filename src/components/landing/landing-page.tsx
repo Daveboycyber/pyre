@@ -6,7 +6,6 @@ import { FeatureGrid } from "@/components/landing/feature-grid";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { Badge } from "@/components/ui/badge";
 import { CtaLink } from "@/components/ui/cta-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -47,7 +46,6 @@ export function LandingPage() {
         Skip to content
       </a>
       <SiteHeader />
-      <WalletDialog />
 
       <main id="main">
         <section className="hero-glow overflow-hidden">

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { WalletButton } from "@/components/layout/wallet-button";
+import { WalletDialog } from "@/components/wallet/wallet-dialog";
 import { Button } from "@/components/ui/button";
 import { NavItemLink } from "@/components/ui/nav-item-link";
 import { PRODUCT_NAV } from "@/lib/site-nav";
@@ -61,6 +62,7 @@ export function SiteHeader() {
           />
         </nav>
       </div>
+      <WalletDialog />
     </header>
   );
 }

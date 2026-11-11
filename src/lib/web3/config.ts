@@ -45,6 +45,22 @@ const connectors = [
   }),
 ];
 
+/**
+ * Whether a connected wallet was saved when the page loaded. Read here, before
+ * createConfig, because wagmi's first reconnect attempt can clear the saved
+ * session (e.g. before wallets announce over EIP-6963) and reconnect a moment
+ * later. The UI uses it to show "Reconnecting…" instead of "Connect wallet".
+ */
+export const HAD_WALLET_SESSION_AT_LOAD = (() => {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem("wagmi.store");
+    return Boolean(raw && (JSON.parse(raw) as { state?: { current?: string | null } }).state?.current);
+  } catch {
+    return false; // storage blocked: nothing to restore
+  }
+})();
+
 export const wagmiConfig = createConfig({
   chains: [robinhoodChain],
   connectors,
