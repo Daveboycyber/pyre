@@ -17,7 +17,7 @@ The brief says "not deployed". That is out of date: the gate is live and `26de33
 - **Bytecode.** Built locally with the repo's `foundry.toml` (solc 0.8.37, optimizer off). The live runtime code (with the `wif` immutable masked) and the deploy transaction's init code match the build byte for byte, CBOR metadata included. Constructor args decode to `wif = 0x5173…4773`, `treasury = 0xD456…88d6`, `feeAmount = 50e18`, `burnBps = 8000`.
 - **Live state** (block ~111.43M): `feeAmount = 50e18`, `burnBps = 8000`, `paused = false`, `pendingOwner = 0x0`, gate $WIF balance 0. Owner is `0xf2159eCDEb837ae34f637dA3AFd29Eb52e5566b6`, an EOA (the deployer). The treasury is an EOA.
 - **Token.** Read the $WIF runtime bytecode and probed it with `eth_call`. Blockscout's API is behind Cloudflare and was not reachable from the review machine, so the verified-source check was not done.
-- **Tests.** `forge test --match-contract PyreWifGate`: 10/10 pass.
+- **Tests.** `forge test --match-contract PyreWifGate`: the original suite passed 10/10. This PR adds the 9 cases the brief asked for, and the suite now passes 19/19 (see [Contract tests added](#contract-tests-added)).
 - **Fork run.** Anvil fork of chain 4663, impersonating a real $WIF holder:
   - `payFee()` without an approval reverts with `TransferFailed()` (`0x90b8ec18`).
   - Approving 50 $WIF then calling `payFee()` gives user −50, `0x…dEaD` +40, treasury +10 and gate 0, with 4 logs (3 Transfer and `WifFeePaid`). It used 85,994 gas.
@@ -45,7 +45,7 @@ The brief says "not deployed". That is out of date: the gate is live and `26de33
 | 7 | Low | Copy | **The fee row, review hint, FAQ and hackathon doc still said the whole fee goes to the treasury.** | **Fixed in this PR** |
 | 8 | Low | App | **`wif.ts` had no tests**, and `readWifFeeAmount` quietly fell back to 50 when the read failed. | **Fixed in this PR** |
 | 9 | Info | Contract | **Zero-fee events.** With `feeAmount = 0`, anyone can emit `WifFeePaid` for free. Indexers should ignore zero-amount events. | Note |
-| 10 | Info | Docs | **The brief is out of date.** It says "not deployed" and compiler 0.8.24 (the build uses 0.8.37 with the `^0.8.24` pragma). | Note |
+| 10 | Info | Docs | **The brief is out of date.** It says "not deployed" and compiler 0.8.24 (the build uses 0.8.37 with the `^0.8.24` pragma). `contracts/script/DEPLOY.md` also still said "not deployed". | DEPLOY.md **fixed in this PR**; the brief is a separate document |
 
 No path was found for a third party to take user funds through the gate. The contract matches its spec.
 
@@ -58,13 +58,23 @@ No path was found for a third party to take user funds through the gate. The con
 - `actionErrorMessage` shows `WifFeeError` messages as-is.
 - Copy now says at least half the fee is burned and the rest goes to the treasury.
 - `src/lib/web3/wif.test.ts` adds 10 tests covering these paths.
+- `contracts/test/PyreWifGate.t.sol` adds the 9 contract tests listed below. `contracts/PyreWifGate.sol` is unchanged, so the live bytecode match still holds.
+- `contracts/script/DEPLOY.md` now records the live address and the 19/19 test count.
 
-## Contract tests still worth adding
+## Contract tests added
 
-The brief lists these and the suite does not have them yet:
+The brief listed these as missing. They are now in `contracts/test/PyreWifGate.t.sol`, and all 19 tests pass.
 
-- constructor `burnBps` of 4999 and 10001
-- constructor with a zero treasury
-- `setFeeAmount(MAX_FEE)` succeeds and `MAX_FEE + 1` reverts
-- a mock token that returns `false`, or returns no data
-- a third account calling `acceptOwnership()`
+| Brief item | Test | What it checks |
+|---|---|---|
+| Constructor `burnBps` of 4999 | `test_constructor_rejects_burn_below_floor` | Reverts with `BurnOutOfRange` |
+| Constructor `burnBps` of 10001 | `test_constructor_rejects_burn_above_max` | Reverts with `BurnOutOfRange` |
+| Constructor with a zero treasury | `test_constructor_rejects_zero_treasury` | Reverts with `ZeroAddress` |
+| `setFeeAmount(MAX_FEE)` ok, `MAX_FEE + 1` reverts | `test_setFeeAmount_max_ok_and_above_reverts` | 1,000 $WIF is accepted, 1,000 $WIF + 1 wei reverts with `FeeTooHigh`, and the stored fee stays at 1,000 |
+| Token returns `false` | `test_token_returning_false_on_pull_reverts` | `transferFrom` returning `false` reverts with `TransferFailed`; the user keeps their balance |
+| Token returns `false` | `test_token_returning_false_on_burn_reverts_whole_fee` | The pull succeeds but the burn `transfer` returns `false`, so the whole call reverts: user balance, allowance and gate balance are all unchanged |
+| Token returns no data | `test_token_with_no_return_data_works` | A USDT-style token with no return value still splits 40 / 10 and leaves the gate at 0 |
+| Token returns no data | `test_token_with_no_return_data_still_reverts_on_failure` | A failing pull with no return data still reverts with `TransferFailed` |
+| Third account calls `acceptOwnership()` | `test_third_account_cannot_accept_ownership` | Reverts with `NotPendingOwner`; owner and pending owner are unchanged |
+
+The PyreBatch suite (16 tests) still passes.
