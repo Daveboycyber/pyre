@@ -29,7 +29,7 @@ Users who clean 2+ items need a batch fee → prefer $WIF when held → PyreWifG
 
 ### Fee amount
 
-**50 $WIF** (18 decimals) for hackathon simplicity (not oracle-priced). The gate owner can change it (max 1,000), but the app never pays more than the 50 it shows: a higher on-chain fee stops the clean before anything is signed. See [the gate audit](audits/PyreWifGate-2026-11-11.md).
+The fee is the gate's on-chain `feeAmount`: **50 $WIF** today (18 decimals, not oracle-priced). The owner can change it from 0 to 1,000 $WIF. The cleaner reads the live fee on every scan and shows that amount. If the fee goes up between review and signing, the clean stops before anything is signed. Marketing pages show the 50 $WIF default. See [the gate audit](audits/PyreWifGate-2026-11-11.md).
 
 ## Deploy
 

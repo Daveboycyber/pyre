@@ -36,28 +36,30 @@ The brief says "not deployed". That is out of date: the gate is live and `26de33
 
 | # | Severity | Area | Finding | Status |
 |---|---|---|---|---|
-| 1 | High | App | **The app could charge more than the user saw.** The UI shows a fixed "50 $WIF", but `payFeeWithWif` paid whatever `feeAmount` the gate returned (up to 1,000 $WIF). This breaks the `AGENTS.md` rule that a higher fee must stop the clean. | **Fixed in this PR** |
+| 1 | High | App | **The cleaner showed a static fee, not the real one.** The gate's `feeAmount` is the fee, and `payFeeWithWif` correctly paid it. But the cleaner UI printed a hardcoded "50 $WIF" label, so if the owner changed the fee (0 to 1,000 $WIF), users would sign for an amount they were never shown. That breaks the `AGENTS.md` rule "never charge more than the user saw". | **Fixed in this PR**: the cleaner now reads and shows the live gate fee |
 | 2 | High | Ops | **The owner is still the hot deployer EOA.** The checklist step to hand ownership to a cold wallet or multisig hasn't been done. That key can raise the fee to 1,000 $WIF (charging any max-approval holder who calls `payFee`), redirect up to 50% of each fee, or pause. | **Open.** Run `transferOwnership(cold)`, then `acceptOwnership()` from the cold wallet. |
 | 3 | Medium | App | **The fallback to ETH could charge twice.** Any $WIF failure fell through to the ETH fee. If `payFee` was sent but the receipt wait threw, the user could pay both. The fallback also fired when the user declined in the wallet. | **Fixed in this PR** |
 | 4 | Low | Contract / copy | **Sending to `0x…dEaD` removes tokens from circulation but leaves `totalSupply` unchanged**, even though $WIF has a real `burn(uint256)`. The NatSpec line "permanently reduces supply" overstates it. | Open. A future version could call `burn()`. Copy should say "removed from circulation". |
 | 5 | Low | Contract | **The gate can strand fees.** `setTreasury` accepts the gate's own address, which leaves the treasury share stuck forever. $WIF sent to the gate directly is also stuck. | Open. A future version should reject `treasury == address(this)`. |
-| 6 | Low | Contract | **`payFee()` takes no maximum fee**, so a wallet with an unlimited approval pays whatever the fee is when the call lands. | Open. Covered in the app by exact approvals plus the fee cap. A future version could take `payFee(uint256 maxFee)`. |
+| 6 | Low | Contract | **`payFee()` takes no maximum fee**, so a wallet with an unlimited approval pays whatever the fee is when the call lands. | Open. Covered in the app by exact approvals and the check against the fee shown at review. A future version could take `payFee(uint256 maxFee)`. |
 | 7 | Low | Copy | **The fee row, review hint, FAQ and hackathon doc still said the whole fee goes to the treasury.** | **Fixed in this PR** |
-| 8 | Low | App | **`wif.ts` had no tests**, and `readWifFeeAmount` quietly fell back to 50 when the read failed. | **Fixed in this PR** |
-| 9 | Info | Contract | **Zero-fee events.** With `feeAmount = 0`, anyone can emit `WifFeePaid` for free. Indexers should ignore zero-amount events. | Note |
+| 8 | Low | App | **`wif.ts` had no tests**, and `readWifFeeAmount` quietly fell back to the static 50 when the read failed. | **Fixed in this PR** |
+| 9 | Info | Contract | **Zero-fee events.** Only possible if the owner sets `feeAmount = 0`. Then anyone can call `payFee()` for free and emit `WifFeePaid(payer, 0, 0, 0)`. No funds move and no one loses anything; the only effect is that a naive count of paid batches (for example on a stats page or for judges) could be inflated. At the live 50 $WIF, every event costs the caller a real 50 $WIF. | Note. Count only events with `gross > 0`, and don't set the fee to 0 |
 | 10 | Info | Docs | **The brief is out of date.** It says "not deployed" and compiler 0.8.24 (the build uses 0.8.37 with the `^0.8.24` pragma). `contracts/script/DEPLOY.md` also still said "not deployed". | DEPLOY.md **fixed in this PR**; the brief is a separate document |
 
 No path was found for a third party to take user funds through the gate. The contract matches its spec.
 
 ## What this PR changes
 
-- `payFeeWithWif` takes `maxFee`, which defaults to the 50 $WIF the UI shows. It throws `WifFeeError` if the gate asks for more. It checks the fee once before signing and again right before `payFee`, after the approve has landed. Approvals stay exact, so a fee raised between the re-check and inclusion makes `payFee` revert instead of overcharging.
+- **The live gate fee is the fee.** The cleaner reads `feeAmount` from the gate on every scan and shows it everywhere it shows the $WIF fee: the review hint, confirm dialog, sign button, signing row, result panel and tx list. "50 $WIF" remains only as static copy on the marketing pages and in demo mode.
+- `payFeeWithWif` pays the live fee and takes `shownFee`, the value read at scan and shown at review. If the owner raised the fee after the user reviewed it, it throws `WifFeeError` before anything is signed (the same rule `resolveBatchFee` applies to ETH). It checks once before signing and again right before `payFee`, after the approve lands. Approvals are for exactly the live fee, so a raise between the re-check and inclusion makes `payFee` revert instead of overcharging. A lower fee is paid as is.
+- `canPayWif` compares the balance with the live fee, not the static 50. If the fee can't be read, the clean uses the ETH fee path.
 - `readWifFeeAmount` throws on a failed read instead of assuming 50.
 - If `payFee` is sent but the receipt can't be confirmed, it throws `WifFeeError` with the tx hash, and the clean stops.
 - `wifFeeFallback(err)` decides between `"eth"` and `"stop"`. A wallet rejection or a `WifFeeError` stops the clean. Low balance, read failures, failed simulations and mined reverts (which charged nothing) still fall back to ETH.
 - `actionErrorMessage` shows `WifFeeError` messages as-is.
 - Copy now says at least half the fee is burned and the rest goes to the treasury.
-- `src/lib/web3/wif.test.ts` adds 10 tests covering these paths.
+- `src/lib/web3/wif.test.ts` adds 12 tests covering these paths, including paying a live fee other than 50.
 - `contracts/test/PyreWifGate.t.sol` adds the 9 contract tests listed below. `contracts/PyreWifGate.sol` is unchanged, so the live bytecode match still holds.
 - `contracts/script/DEPLOY.md` now records the live address and the 19/19 test count.
 
