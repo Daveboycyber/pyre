@@ -10,14 +10,14 @@ Do not put "Robinhood" in the project name, logo, or handle.
 | | |
 |---|---|
 | Repo (branch) | https://github.com/Daveboycyber/pyre/tree/hackathon/wif |
-| Live demo | https://pyre-git-hackathon-wif-pyre5.vercel.app |
+| Live demo | https://pyre-wif.vercel.app |
 | Chain | Robinhood Chain, id 4663 |
 | $WIF | `0x5173b8eA6923c2d40267890D45C46a3480954773` |
 | Gate | `0x4A5442c781F4ec7f38c080338758f4193287E29E` |
 | Deploy tx | `0xb05cab6275c9a59a306f3aac81d04b0fb95e8c51cc7b1931ba28eaaa9cf7902a` |
 | Audit | `docs/audits/PyreWifGate-2026-11-11.md` |
 
-Production `main` is the cleaner without $WIF. Submit the preview above, not the production domain.
+Production `main` is the cleaner without $WIF. Submit https://pyre-wif.vercel.app, not the production domain. This alias is pinned to the current `hackathon/wif` deploy. Re-point it after the next app push.
 
 ## Form copy
 
@@ -48,9 +48,9 @@ People clean wallets because the wallets are messy, not because of a points prog
 
 ## Demo video (about 45–60 seconds)
 
-Record the preview, not production. Narrate:
+Record https://pyre-wif.vercel.app, not production. Narrate:
 
-1. Open the preview. Connect a wallet that holds at least 50 $WIF.
+1. Open the demo. Connect a wallet that holds at least 50 $WIF.
 2. Scan. Select two or more lines.
 3. Point at the fee: it reads the live gate fee, paid in $WIF, at least half removed from circulation.
 4. Sign approve only if the wallet asks, then `payFee`.
@@ -59,9 +59,9 @@ Record the preview, not production. Narrate:
 
 ## Before you click submit
 
-- [ ] Preview loads: https://pyre-git-hackathon-wif-pyre5.vercel.app
+- [ ] Demo loads: https://pyre-wif.vercel.app
 - [ ] One real wallet clean with ≥50 $WIF, or paste the fork tx hashes from the audit into the form
 - [ ] Video uploaded and linked
 - [ ] Repo is public, or `wifonrh` is invited if it stays private
 - [ ] Name, logo, and handle do not use Robinhood
-- [ ] Leave the preview deployed through 16 Nov, 17:30 UTC
+- [ ] Leave the demo deployed through 16 Nov, 17:30 UTC
