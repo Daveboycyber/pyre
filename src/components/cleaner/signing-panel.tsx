@@ -5,7 +5,7 @@ import { useWalletCleaner } from "@/lib/web3/use-wallet-cleaner";
 
 /** Live progress while each line is confirmed in the wallet. */
 export function SigningPanel() {
-  const { assets, mode, demo, currentId, feeStatus, feePaidWithWif } =
+  const { assets, mode, demo, currentId, feeStatus, feePaidWithWif, wifFeeLabel } =
     useWalletCleaner();
 
   // Lines in this run: still selected, or already touched by the signer.
@@ -53,6 +53,7 @@ export function SigningPanel() {
               active={currentId === PROTOCOL_FEE_ID}
               status={feeStatus}
               paidWithWif={feePaidWithWif}
+              wifFeeLabel={wifFeeLabel}
             />
           </li>
         ) : null}

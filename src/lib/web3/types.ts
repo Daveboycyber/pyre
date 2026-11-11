@@ -42,8 +42,10 @@ export type LastClean = {
   feePaid: boolean;
   /** Batch fee was waived by spending a local credit. */
   feeWaived?: boolean;
-  /** Batch fee paid by transferring $WIF to treasury (hackathon track). */
+  /** Batch fee paid in $WIF through PyreWifGate (hackathon track). */
   feePaidWithWif?: boolean;
+  /** Amount paid in $WIF, as a label (e.g. "50 $WIF"). */
+  feeWifLabel?: string;
   recoveredWei: bigint;
   cutWei: bigint;
   /** Credits awarded for this clean (local ledger). */

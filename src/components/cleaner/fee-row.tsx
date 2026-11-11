@@ -1,17 +1,22 @@
 import { TxStatusIcon, type TxStatus } from "@/components/cleaner/tx-status-icon";
 import { cn } from "@/lib/utils";
-import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 
 export function FeeRow({
   active,
   status,
   paidWithWif,
-}: Readonly<{ active?: boolean; status?: TxStatus; paidWithWif?: boolean }>) {
+  wifFeeLabel,
+}: Readonly<{
+  active?: boolean;
+  status?: TxStatus;
+  paidWithWif?: boolean;
+  wifFeeLabel: string;
+}>) {
   const subtitle =
     status === "failed"
       ? "Not paid · no burns started"
       : paidWithWif
-        ? `${WIF_FEE_LABEL} · sent to treasury`
+        ? `${wifFeeLabel} · burned + treasury`
         : "Flat batch fee · treasury";
 
   return (
@@ -24,9 +29,7 @@ export function FeeRow({
       <TxStatusIcon status={status} active={active} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm">Protocol fee</span>
-        <span className="block font-mono text-xs text-muted-foreground">
-          {subtitle}
-        </span>
+        <span className="block font-mono text-xs text-muted-foreground">{subtitle}</span>
       </span>
     </div>
   );

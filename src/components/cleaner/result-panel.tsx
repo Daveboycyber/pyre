@@ -55,7 +55,7 @@ function headline(outcome: CleanOutcome, result: LastClean) {
 function feeText(result: LastClean) {
   if (result.feeWaived) return "waived";
   if (result.feeWei === 0n && !result.feePaidWithWif) return "free";
-  if (result.feePaidWithWif) return WIF_FEE_LABEL;
+  if (result.feePaidWithWif) return result.feeWifLabel ?? WIF_FEE_LABEL;
   return result.feePaid ? formatFeeEth(result.feeWei) : "not charged";
 }
 

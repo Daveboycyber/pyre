@@ -26,7 +26,7 @@ export function FeeExample() {
           <Line label="Batch fee (once)" value={WIF_FEE_LABEL} />
           <Line label="Per-line fee" value="None" />
           <Line label="Network gas" value="ETH, paid to the chain" />
-          <Line label="Pyre takes" value={WIF_FEE_LABEL} strong />
+          <Line label="You pay Pyre" value={WIF_FEE_LABEL} strong />
         </dl>
       </div>
       <div className="rounded-2xl bg-card/60 p-6 shadow-[var(--shadow-border)]">

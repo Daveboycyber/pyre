@@ -1,6 +1,8 @@
 # Deploy PyreWifGate (Robinhood Chain 4663)
 
-**Not deployed yet.** Local suite: `forge test` → **10/10 pass**.
+**Deployed** at `0x4A5442c781F4ec7f38c080338758f4193287E29E` (tx `0xb05cab6275c9a59a306f3aac81d0b40fb95e8c51cc7b1931ba28eaaa9cf7902a`). Bytecode matches this repo; see [the audit](../../docs/audits/PyreWifGate-2026-11-11.md). Local suite: `forge test --match-contract PyreWifGate` passes **19/19**.
+
+**Still to do:** the owner is the deployer EOA. Run step 3 under "After deploy".
 
 ## Constructor args
 

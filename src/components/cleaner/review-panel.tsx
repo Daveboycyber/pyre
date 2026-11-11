@@ -1,7 +1,6 @@
 import { Eye, EyeOff } from "lucide-react";
 import { confirmDialog } from "@/lib/dialogs";
 import { formatFeeEth } from "@/lib/web3/fees";
-import { WIF_FEE_LABEL } from "@/lib/web3/wif";
 import { notify } from "@/lib/notify";
 import { AssetGroup } from "@/components/cleaner/asset-group";
 import { AssetRow } from "@/components/cleaner/asset-row";
@@ -144,29 +143,30 @@ function FeeHint({
   feeWei,
   credits,
   canPayWif,
-}: Readonly<{ feeWei: bigint; credits: number; canPayWif: boolean }>) {
+  wifFeeLabel,
+}: Readonly<{ feeWei: bigint; credits: number; canPayWif: boolean; wifFeeLabel: string }>) {
   if (feeWei > 0n && credits >= 1) {
     return <>One credit will waive the batch fee for this clean.</>;
   }
   if (feeWei > 0n && canPayWif) {
     return (
       <>
-        The batch fee is {WIF_FEE_LABEL}, sent once to the Pyre treasury before any line runs. Gas
-        stays in ETH.
+        The batch fee is {wifFeeLabel}, paid once before any line runs. At least half is burned
+        and the rest goes to the Pyre treasury. Gas stays in ETH.
       </>
     );
   }
   if (feeWei > 0n) {
     return (
       <>
-        The batch fee is {WIF_FEE_LABEL}. This wallet holds less than that, so this clean pays{" "}
+        The batch fee is {wifFeeLabel}. This wallet holds less than that, so this clean pays{" "}
         {formatFeeEth(feeWei)} instead. Top up $WIF and rescan to pay in $WIF.
       </>
     );
   }
   return (
     <>
-      One action stays free. Select two or more and a flat {WIF_FEE_LABEL} batch fee applies.
+      One action stays free. Select two or more and a flat {wifFeeLabel} batch fee applies.
     </>
   );
 }
@@ -179,6 +179,7 @@ export function ReviewPanel() {
     demo,
     credits,
     canPayWif,
+    wifFeeLabel,
     dismissedCount,
     showDismissed,
     isDismissed,
@@ -219,8 +220,8 @@ export function ReviewPanel() {
     if (willWaiveFee) fee = "Waived (1 credit)";
     else if (summary.feeWei > 0n) {
       fee = canPayWif
-        ? WIF_FEE_LABEL
-        : `${formatFeeEth(summary.feeWei)} (under ${WIF_FEE_LABEL} held)`;
+        ? wifFeeLabel
+        : `${formatFeeEth(summary.feeWei)} (under ${wifFeeLabel} held)`;
     }
     const ok = await confirmDialog({
       tone: "warning",
@@ -268,7 +269,12 @@ export function ReviewPanel() {
       )}
 
       <p className="text-xs text-muted-foreground">
-        {MODE_HINTS[mode]} <FeeHint feeWei={summary.feeWei} credits={credits} canPayWif={canPayWif} />
+        {MODE_HINTS[mode]} <FeeHint
+          feeWei={summary.feeWei}
+          credits={credits}
+          canPayWif={canPayWif}
+          wifFeeLabel={wifFeeLabel}
+        />
       </p>
 
       <SignBar
@@ -276,6 +282,7 @@ export function ReviewPanel() {
         feeWei={summary.feeWei}
         waived={willWaiveFee}
         preferWif={!willWaiveFee && summary.feeWei > 0n && canPayWif}
+        wifFeeLabel={wifFeeLabel}
         onSign={() => void confirmAndSign()}
       />
     </section>
