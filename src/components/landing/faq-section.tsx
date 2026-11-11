@@ -33,11 +33,11 @@ const FAQS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "How are fees charged?",
-    a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${WIF_FEE_LABEL} protocol fee, sent once to the Pyre treasury before any burns run. Gas is still paid in ETH. If your wallet holds less than ${WIF_FEE_LABEL}, that clean pays ${formatFeeEth(PROTOCOL_FEE_WEI)} instead. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
+    a: `A single burn or revoke is free besides network gas. Two or more actions in one Clean is a batch and pays a flat ${WIF_FEE_LABEL} protocol fee, paid once before any burns run. At least half of it is burned and the rest goes to the Pyre treasury. Gas is still paid in ETH. If your wallet holds less than ${WIF_FEE_LABEL}, that clean pays ${formatFeeEth(PROTOCOL_FEE_WEI)} instead. If the fee payment fails, nothing is burned. Pyre never takes a cut of your tokens or Stock Tokens.`,
   },
   {
     q: "Why is the fee in $WIF?",
-    a: `Pyre is built for the World is Flat hackathon, so the batch fee is priced in $WIF. Every batch clean moves ${WIF_FEE_LABEL} on-chain to the public treasury, which you can check on the Fees page. You do not need $WIF for a single burn or revoke.`,
+    a: `Pyre is built for the World is Flat hackathon, so the batch fee is priced in $WIF. Every batch clean pays ${WIF_FEE_LABEL} through the PyreWifGate contract, which sends at least half to the dead address and the rest to the public treasury. You do not need $WIF for a single burn or revoke.`,
   },
   {
     q: "What are credits?",

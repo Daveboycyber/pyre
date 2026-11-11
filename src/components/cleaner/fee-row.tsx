@@ -11,7 +11,7 @@ export function FeeRow({
     status === "failed"
       ? "Not paid · no burns started"
       : paidWithWif
-        ? `${WIF_FEE_LABEL} · sent to treasury`
+        ? `${WIF_FEE_LABEL} · burned + treasury`
         : "Flat batch fee · treasury";
 
   return (

@@ -151,8 +151,8 @@ function FeeHint({
   if (feeWei > 0n && canPayWif) {
     return (
       <>
-        The batch fee is {WIF_FEE_LABEL}, sent once to the Pyre treasury before any line runs. Gas
-        stays in ETH.
+        The batch fee is {WIF_FEE_LABEL}, paid once before any line runs. At least half is burned
+        and the rest goes to the Pyre treasury. Gas stays in ETH.
       </>
     );
   }

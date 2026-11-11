@@ -19,17 +19,17 @@
 
 | Piece | Behavior |
 |-------|----------|
-| `src/lib/web3/wif.ts` | Constants + `payFeeWithWif` (ERC-20 transfer to treasury) |
+| `src/lib/web3/wif.ts` | Constants + `payFeeWithWif` (approve + `PyreWifGate.payFee()` at `0x4A5442c781F4ec7f38c080338758f4193287E29E`) |
 | Cleaner fee path | If wallet holds ≥ **50 $WIF**, batch fee is paid **in $WIF** on-chain; else ETH via `PyreBatch` |
 | UI copy | Review / sign bar explain $WIF fee |
 
 ### Flywheel
 
-Users who clean 2+ items need a batch fee → prefer $WIF when held → on-chain transfer to Pyre treasury → demand for $WIF tied to real cleaner usage.
+Users who clean 2+ items need a batch fee → prefer $WIF when held → PyreWifGate burns at least half (80% today) to `0x…dEaD` and sends the rest to the Pyre treasury → demand for $WIF tied to real cleaner usage.
 
 ### Fee amount
 
-Fixed **50 $WIF** (18 decimals) for hackathon simplicity (not oracle-priced). Override later if needed.
+**50 $WIF** (18 decimals) for hackathon simplicity (not oracle-priced). The gate owner can change it (max 1,000), but the app never pays more than the 50 it shows: a higher on-chain fee stops the clean before anything is signed. See [the gate audit](audits/PyreWifGate-2026-11-11.md).
 
 ## Deploy
 
@@ -37,7 +37,7 @@ Pushes to `hackathon/wif` → Vercel **Preview**. Use that URL for the submissio
 
 ## Still needed before submit
 
-1. Smoke-test: hold 50+ $WIF → batch clean → confirm treasury received $WIF tx  
+1. Smoke-test: hold 50+ $WIF → batch clean → confirm user −50, `0x…dEaD` +40, treasury +10 and a `WifFeePaid` log  
 2. Demo video (scan → multi-select → $WIF fee → burns)  
 3. Public repo link + short write-up of the flywheel  
 4. Categories: **Stock Tokens** + **tools and infra**  
